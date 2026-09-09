@@ -18,96 +18,96 @@ export const useFetchCars = () => {
                 return;
             }
 
-            // 2. Resilient fallback dataset if backend server is not yet started
-            const fallbackData = [
+            // 2. Iconic Indian Rental Fleet Dataset (INR ₹ Pricing)
+            const indianFleet = [
                 { 
                     id: 1, 
-                    make: 'Porsche', 
-                    model: '911 Carrera S', 
-                    type: 'Sports Convertible', 
-                    category: 'sports',
-                    price: 180,
-                    rating: 4.95,
-                    reviews: 184,
-                    transmission: 'Automatic',
-                    passengers: 4,
-                    fuel: 'Premium Gas',
-                    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800'
-                },
-                { 
-                    id: 2, 
-                    make: 'Tesla', 
-                    model: 'Model Y Long Range', 
-                    type: 'Electric Crossover', 
-                    category: 'electric',
-                    price: 95,
-                    rating: 4.88,
-                    reviews: 215,
-                    transmission: 'Automatic',
-                    passengers: 5,
-                    fuel: 'Electric',
-                    image: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=800'
-                },
-                { 
-                    id: 3, 
-                    make: 'Range Rover', 
-                    model: 'Sport Luxury', 
-                    type: 'Luxury SUV', 
+                    make: 'Mahindra', 
+                    model: 'Thar 4x4 Hard Top', 
+                    type: 'Iconic Off-Road SUV', 
                     category: 'suv',
-                    price: 140,
-                    rating: 4.91,
-                    reviews: 98,
-                    transmission: 'Automatic',
-                    passengers: 7,
-                    fuel: 'Mild Hybrid',
+                    price: 3499,
+                    rating: 4.95,
+                    reviews: 320,
+                    transmission: 'Manual 4x4',
+                    passengers: 4,
+                    fuel: 'mHawk Diesel',
                     image: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=800'
                 },
                 { 
-                    id: 4, 
-                    make: 'Mercedes-Benz', 
-                    model: 'C-Class AMG Line', 
-                    type: 'Premium Sedan', 
-                    category: 'sedan',
-                    price: 75,
-                    rating: 4.82,
-                    reviews: 142,
+                    id: 2, 
+                    make: 'Toyota', 
+                    model: 'Fortuner Legender 4x4', 
+                    type: 'Executive 7-Seater Luxury SUV', 
+                    category: 'suv',
+                    price: 6999,
+                    rating: 4.93,
+                    reviews: 410,
+                    transmission: 'Automatic',
+                    passengers: 7,
+                    fuel: 'Diesel 2.8L',
+                    image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=800'
+                },
+                { 
+                    id: 3, 
+                    make: 'Tata', 
+                    model: 'Nexon.ev Long Range', 
+                    type: 'Electric Smart Crossover', 
+                    category: 'electric',
+                    price: 2499,
+                    rating: 4.88,
+                    reviews: 280,
                     transmission: 'Automatic',
                     passengers: 5,
-                    fuel: 'Gasoline',
+                    fuel: 'Electric (465 km)',
+                    image: 'https://images.unsplash.com/photo-1619767886558-efdc259cde1a?auto=format&fit=crop&q=80&w=800'
+                },
+                { 
+                    id: 4, 
+                    make: 'Hyundai', 
+                    model: 'Creta SX(O) Panoramic', 
+                    type: 'Premium Urban SUV', 
+                    category: 'suv',
+                    price: 2199,
+                    rating: 4.86,
+                    reviews: 235,
+                    transmission: 'Automatic IVT',
+                    passengers: 5,
+                    fuel: 'Petrol / Diesel',
                     image: 'https://images.unsplash.com/photo-1617531653332-bd46c24f2068?auto=format&fit=crop&q=80&w=800'
                 },
                 { 
                     id: 5, 
-                    make: 'Ford', 
-                    model: 'Bronco Wildtrak', 
-                    type: 'Off-Road SUV', 
-                    category: 'suv',
-                    price: 110,
-                    rating: 4.87,
-                    reviews: 73,
-                    transmission: 'Automatic',
+                    make: 'Maruti Suzuki', 
+                    model: 'Dzire ZXi+ AMT', 
+                    type: 'Economy City Sedan', 
+                    category: 'sedan',
+                    price: 1499,
+                    rating: 4.81,
+                    reviews: 510,
+                    transmission: 'Automatic / AMT',
                     passengers: 5,
-                    fuel: 'Gasoline',
-                    image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&q=80&w=800'
+                    fuel: 'Petrol (22.5 km/l)',
+                    image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&q=80&w=800'
                 },
                 { 
                     id: 6, 
-                    make: 'Audi', 
-                    model: 'e-tron GT', 
-                    type: 'Electric Sports Sedan', 
-                    category: 'electric',
-                    price: 220,
+                    make: 'BMW', 
+                    model: '3 Series Gran Limousine', 
+                    type: 'VIP Luxury Executive Sedan', 
+                    category: 'sports',
+                    price: 11999,
                     rating: 4.97,
-                    reviews: 54,
-                    transmission: 'Automatic',
-                    passengers: 4,
-                    fuel: 'Electric',
-                    image: 'https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?auto=format&fit=crop&q=80&w=800'
+                    reviews: 140,
+                    transmission: 'Steptronic Auto',
+                    passengers: 5,
+                    fuel: 'TwinPower Turbo',
+                    image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=800'
                 }
             ];
 
             setTimeout(() => {
-                setFleet(fallbackData);
+                setFleet(indianFleet);
                 setLoading(false);
             }, 600);
         };

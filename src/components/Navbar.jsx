@@ -1,10 +1,16 @@
 import React, { useState, useContext } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { CarContext } from '../CarContext';
 
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { bookings } = useContext(CarContext);
+  const { bookings, user, logout } = useContext(CarContext);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const activeLinkClass = ({ isActive }) => 
     `text-sm font-semibold transition px-3 py-1.5 rounded-lg ${
@@ -14,20 +20,28 @@ export const Navbar = () => {
     }`;
 
   return (
-    <nav className="bg-white/85 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100">
+    <nav className="bg-white/90 backdrop-blur-md sticky top-0 z-40 border-b border-slate-100">
       <div className="container mx-auto px-4 max-w-7xl flex justify-between items-center h-20">
-        {/* Brand Logo */}
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-200">
+        {/* Brand Logo with Indian Flag Motif */}
+        <Link to="/" className="flex items-center space-x-2.5">
+          <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-100">
             A
           </div>
-          <span className="text-xl font-black text-slate-900 tracking-tight">
-            Apex<span className="text-indigo-600">Drive</span>
-          </span>
+          <div>
+            <div className="flex items-center space-x-1.5">
+              <span className="text-xl font-black text-slate-900 tracking-tight">
+                Apex<span className="text-indigo-600">Drive</span>
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded">
+                Bharat 🇮🇳
+              </span>
+            </div>
+            <p className="text-[9px] text-slate-400 font-medium">Self-Drive Rentals Across India</p>
+          </div>
         </Link>
 
-        {/* Desktop Navigation Links (React Router NavLink) */}
-        <div className="hidden md:flex items-center space-x-2">
+        {/* Desktop Navigation Links */}
+        <div className="hidden md:flex items-center space-x-1">
           <NavLink to="/" className={activeLinkClass}>
             Home
           </NavLink>
@@ -50,13 +64,49 @@ export const Navbar = () => {
           </NavLink>
         </div>
 
-        {/* Call to Actions */}
-        <div className="hidden md:flex items-center space-x-4">
+        {/* User Authentication Status or CTA */}
+        <div className="hidden md:flex items-center space-x-3">
+          {user ? (
+            <div className="flex items-center space-x-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-1.5 pl-3">
+              <div className="text-right">
+                <span className="text-[10px] text-slate-400 block font-medium leading-none">Namaste 🙏</span>
+                <span className="text-xs font-bold text-slate-800 leading-tight block">{user.name}</span>
+              </div>
+              <div className="w-8 h-8 bg-indigo-600 text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-sm">
+                {user.avatar || 'IN'}
+              </div>
+              <button
+                onClick={handleLogout}
+                title="Logout"
+                className="text-slate-400 hover:text-rose-600 p-1.5 transition rounded-lg hover:bg-white"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Link 
+                to="/login"
+                className="text-slate-700 hover:text-indigo-600 font-semibold text-xs px-4 py-2 rounded-xl hover:bg-slate-50 transition"
+              >
+                Sign In
+              </Link>
+              <Link 
+                to="/signup"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl transition shadow-md shadow-indigo-100"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+
           <Link 
             to="/fleet"
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm px-6 py-2.5 rounded-xl transition shadow-lg shadow-indigo-100 hover:shadow-indigo-200"
+            className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition shadow-sm"
           >
-            Rent a Car
+            Rent Car
           </Link>
         </div>
 
@@ -81,6 +131,26 @@ export const Navbar = () => {
       {/* Mobile Navigation Dropdown Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white p-4 space-y-2 shadow-lg flex flex-col absolute top-20 left-0 w-full z-40 transition-all">
+          {user && (
+            <div className="p-3 bg-indigo-50 rounded-xl flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 bg-indigo-600 text-white rounded-lg flex items-center justify-center text-xs font-bold">
+                  {user.avatar || 'IN'}
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-slate-900 block">Namaste, {user.name} 🙏</span>
+                  <span className="text-[10px] text-slate-500">{user.email}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => { logout(); setIsMobileMenuOpen(false); }}
+                className="text-xs text-rose-600 font-bold px-2 py-1 bg-white rounded-lg shadow-sm"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+
           <NavLink 
             to="/" 
             onClick={() => setIsMobileMenuOpen(false)}
@@ -107,13 +177,33 @@ export const Navbar = () => {
               </span>
             )}
           </NavLink>
+
+          {!user && (
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+              <Link 
+                to="/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-center font-semibold py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs"
+              >
+                Sign In
+              </Link>
+              <Link 
+                to="/signup"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-center font-semibold py-2.5 rounded-xl bg-indigo-600 text-white text-xs shadow-sm"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+
           <div className="pt-2 border-t border-slate-100">
             <Link 
               to="/fleet"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="bg-indigo-600 text-white text-center font-semibold py-3 rounded-xl block text-sm shadow-md shadow-indigo-100"
+              className="bg-slate-900 text-white text-center font-semibold py-3 rounded-xl block text-sm shadow-md"
             >
-              Rent a Car
+              Browse Indian Fleet
             </Link>
           </div>
         </div>

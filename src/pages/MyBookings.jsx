@@ -17,12 +17,12 @@ export const MyBookings = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10 pb-6 border-b border-slate-100">
         <div>
-          <span className="text-indigo-600 font-bold tracking-widest text-xs uppercase bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 inline-block mb-2">
-            Reservations Dashboard
+          <span className="text-orange-600 font-bold tracking-widest text-xs uppercase bg-orange-50 px-3 py-1 rounded-full border border-orange-200 inline-block mb-2">
+            🇮🇳 Trip Reservations
           </span>
-          <h1 className="text-3xl font-black text-slate-900">My Vehicle Bookings</h1>
+          <h1 className="text-3xl font-black text-slate-900">My Rental Bookings</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Manage your scheduled trips, review invoices, or cancel active reservations.
+            Review your active road trips, GST tax invoices, and FASTag toll passes.
           </p>
         </div>
         <Link
@@ -41,13 +41,13 @@ export const MyBookings = () => {
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-1">No Active Reservations</h3>
           <p className="text-xs text-slate-500 mb-6 max-w-xs mx-auto">
-            You haven't reserved any vehicles yet. Explore our luxury fleet and book your journey today!
+            You don't have any scheduled Indian road trips right now. Choose from our Thar, Fortuner, or Nexon EV fleet!
           </p>
           <Link
             to="/fleet"
             className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-3 px-6 rounded-xl uppercase tracking-wider transition inline-block shadow-md shadow-indigo-100"
           >
-            Explore Vehicles Fleet
+            Explore Indian Fleet (₹)
           </Link>
         </div>
       ) : (
@@ -86,7 +86,7 @@ export const MyBookings = () => {
                 <div>
                   <div className="flex items-center space-x-1 text-slate-400 font-medium text-[10px] uppercase">
                     <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>Dates ({booking.days} days)</span>
+                    <span>Duration ({booking.days} days)</span>
                   </div>
                   <p className="font-semibold text-slate-800 mt-0.5">
                     {booking.pickupDate} &rarr; {booking.returnDate}
@@ -96,7 +96,7 @@ export const MyBookings = () => {
                 <div>
                   <div className="flex items-center space-x-1 text-slate-400 font-medium text-[10px] uppercase">
                     <MapPinIcon className="w-3.5 h-3.5" />
-                    <span>Pickup Location</span>
+                    <span>Pick-up Hub</span>
                   </div>
                   <p className="font-semibold text-slate-800 mt-0.5 truncate max-w-xs">
                     {booking.pickupLocation}
@@ -107,8 +107,8 @@ export const MyBookings = () => {
               {/* Price & Actions */}
               <div className="flex items-center justify-between md:flex-col md:items-end w-full md:w-auto border-t md:border-t-0 border-slate-100 pt-4 md:pt-0">
                 <div className="text-left md:text-right">
-                  <span className="text-[10px] text-slate-400 block uppercase font-medium">Total Paid</span>
-                  <span className="text-xl font-black text-slate-900">${booking.totalAmount} USD</span>
+                  <span className="text-[10px] text-slate-400 block uppercase font-medium">Total (Inc. 18% GST)</span>
+                  <span className="text-xl font-black text-slate-900">₹{booking.totalAmount.toLocaleString('en-IN')} INR</span>
                 </div>
 
                 <div className="mt-2">
@@ -131,7 +131,7 @@ export const MyBookings = () => {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 text-center">
             <h4 className="text-lg font-bold text-slate-900 mb-2">Cancel Reservation?</h4>
             <p className="text-xs text-slate-500 mb-6">
-              Are you sure you want to cancel booking <strong className="text-slate-800">#{cancelModalId}</strong>? This action cannot be reversed.
+              Are you sure you want to cancel booking <strong className="text-slate-800">#{cancelModalId}</strong>? 100% refund will be processed within 24 hours.
             </p>
             <div className="flex space-x-3">
               <button

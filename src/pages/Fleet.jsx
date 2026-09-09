@@ -11,11 +11,11 @@ export const Fleet = () => {
   const [sortBy, setSortBy] = useState('default');
 
   const categories = [
-    { id: 'all', label: 'All Fleet' },
-    { id: 'sports', label: 'Sports & Performance' },
-    { id: 'suv', label: 'SUVs & Offroad' },
-    { id: 'sedan', label: 'Executive Sedans' },
-    { id: 'electric', label: 'Electric & Hybrid' }
+    { id: 'all', label: 'All Vehicles' },
+    { id: 'suv', label: '4x4 & SUVs' },
+    { id: 'sedan', label: 'Sedans & Compacts' },
+    { id: 'electric', label: 'EVs & Hybrids' },
+    { id: 'sports', label: 'VIP Luxury' }
   ];
 
   const filteredFleet = fleet.filter(car => {
@@ -39,12 +39,12 @@ export const Fleet = () => {
     <div className="container mx-auto px-4 max-w-7xl py-12">
       {/* Page Header */}
       <div className="text-center max-w-2xl mx-auto mb-12">
-        <span className="text-indigo-600 font-bold tracking-widest text-xs uppercase bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 inline-block mb-2">
-          Vehicle Catalog
+        <span className="text-orange-600 font-bold tracking-widest text-xs uppercase bg-orange-50 px-3 py-1 rounded-full border border-orange-200 inline-block mb-2">
+          🇮🇳 Indian Fleet Catalog
         </span>
-        <h1 className="text-3xl md:text-4xl font-black text-slate-900">Explore Our Complete Fleet</h1>
+        <h1 className="text-3xl md:text-4xl font-black text-slate-900">Explore Vehicles in India</h1>
         <p className="text-xs md:text-sm text-slate-500 mt-2">
-          Browse through our modern inventory, filter by category or specs, and reserve your dream car in seconds.
+          Choose from rugged 4x4 offroaders like the Thar, luxury Fortuners, smart electrics, and budget city sedans with transparent INR (₹) rates.
         </p>
       </div>
 
@@ -79,7 +79,7 @@ export const Fleet = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search make or model..."
+              placeholder="Search Thar, Fortuner, Nexon..."
               className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
             />
           </div>
@@ -90,8 +90,8 @@ export const Fleet = () => {
             className="w-full sm:w-auto px-3 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white text-slate-600 transition"
           >
             <option value="default">Sort: Recommended</option>
-            <option value="price-asc">Price: Low to High</option>
-            <option value="price-desc">Price: High to Low</option>
+            <option value="price-asc">Price: Low to High (₹)</option>
+            <option value="price-desc">Price: High to Low (₹)</option>
             <option value="rating-desc">Rating: Highest First</option>
           </select>
         </div>
@@ -148,7 +148,7 @@ export const Fleet = () => {
                 </div>
 
                 <div className="absolute bottom-4 left-4 text-white">
-                  <span className="text-2xl font-black">${car.price}</span>
+                  <span className="text-2xl font-black">₹{car.price.toLocaleString('en-IN')}</span>
                   <span className="text-xs text-white/80"> / day</span>
                 </div>
               </div>
@@ -168,11 +168,11 @@ export const Fleet = () => {
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center">
                       <GearIcon />
-                      <span className="text-[10px] text-slate-600 font-semibold mt-1">{car.transmission}</span>
+                      <span className="text-[10px] text-slate-600 font-semibold mt-1 truncate max-w-full px-0.5">{car.transmission}</span>
                     </div>
                     <div className="bg-slate-50 p-2 rounded-xl flex flex-col items-center">
                       <FuelIcon />
-                      <span className="text-[10px] text-slate-600 font-semibold mt-1 truncate max-w-full px-1">{car.fuel}</span>
+                      <span className="text-[10px] text-slate-600 font-semibold mt-1 truncate max-w-full px-0.5">{car.fuel}</span>
                     </div>
                   </div>
                 </div>

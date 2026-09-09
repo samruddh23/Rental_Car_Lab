@@ -8,6 +8,16 @@ export const CarProvider = ({ children }) => {
     const [fleet, setFleet] = useState([]);
     const [loading, setLoading] = useState(true);
     
+    // User Authentication State
+    const [user, setUser] = useState(() => {
+        try {
+            const savedUser = localStorage.getItem('apexdrive_user');
+            return savedUser ? JSON.parse(savedUser) : null;
+        } catch {
+            return null;
+        }
+    });
+
     // Booking state with LocalStorage persistence for Experiment 4
     const [bookings, setBookings] = useState(() => {
         try {
@@ -26,11 +36,57 @@ export const CarProvider = ({ children }) => {
         }
     }, [bookings]);
 
+    useEffect(() => {
+        try {
+            if (user) {
+                localStorage.setItem('apexdrive_user', JSON.stringify(user));
+            } else {
+                localStorage.removeItem('apexdrive_user');
+            }
+        } catch (err) {
+            console.error('Failed to save user session:', err);
+        }
+    }, [user]);
+
+    // Authentication Handlers
+    const login = (emailOrPhone, _password) => {
+        // Mock authentication check
+        const loggedInUser = {
+            id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
+            name: emailOrPhone.includes('@') ? emailOrPhone.split('@')[0] : 'Samruddh Jadhav',
+            email: emailOrPhone.includes('@') ? emailOrPhone : 'samruddh.jadhav@ves.ac.in',
+            phone: !emailOrPhone.includes('@') ? emailOrPhone : '+91 98201 45678',
+            city: 'Mumbai',
+            avatar: 'SJ'
+        };
+        setUser(loggedInUser);
+        return loggedInUser;
+    };
+
+    const signup = (userData) => {
+        const newUser = {
+            id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
+            name: userData.fullName || 'Samruddh Jadhav',
+            email: userData.email,
+            phone: userData.phone.startsWith('+91') ? userData.phone : `+91 ${userData.phone}`,
+            city: userData.city || 'Mumbai',
+            avatar: userData.fullName ? userData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'IN'
+        };
+        setUser(newUser);
+        return newUser;
+    };
+
+    const logout = () => {
+        setUser(null);
+    };
+
+    // Booking Handlers
     const addBooking = (bookingData) => {
         const newBooking = {
-            id: 'BK-' + Date.now().toString().slice(-6),
+            id: 'BK-IN-' + Date.now().toString().slice(-6),
             createdAt: new Date().toISOString(),
             status: 'Confirmed',
+            currency: 'INR',
             ...bookingData
         };
         setBookings(prev => [newBooking, ...prev]);
@@ -49,7 +105,11 @@ export const CarProvider = ({ children }) => {
             setLoading,
             bookings,
             addBooking,
-            cancelBooking
+            cancelBooking,
+            user,
+            login,
+            signup,
+            logout
         }}>
             {children}
         </CarContext.Provider>

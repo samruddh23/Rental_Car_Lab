@@ -9,6 +9,8 @@ import { Fleet } from './pages/Fleet';
 import { CarDetails } from './pages/CarDetails';
 import { BookingPage } from './pages/BookingPage';
 import { MyBookings } from './pages/MyBookings';
+import { Login } from './pages/Login';
+import { SignUp } from './pages/SignUp';
 import { NotFound } from './pages/NotFound';
 
 // App Content Component where custom hook runs inside CarProvider
@@ -18,24 +20,23 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col selection:bg-indigo-500 selection:text-white">
-      {/* Top Academic Experiment Status Banner */}
-      <div className="bg-gradient-to-r from-indigo-700 via-indigo-600 to-blue-600 text-white text-[11px] font-medium py-1.5 px-4 text-center">
+      {/* Indian Academic & System Status Banner */}
+      <div className="bg-gradient-to-r from-orange-600 via-indigo-600 to-emerald-700 text-white text-[11px] font-medium py-1.5 px-4 text-center">
         <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-center sm:justify-between gap-2">
-          <span>🚗 <strong>MERN Car Rental System</strong> — Experiments 1 to 5 Fully Configured</span>
+          <span>🇮🇳 <strong>ApexDrive Bharat</strong> — Premium Indian Car Rental (Thar, Fortuner, Nexon EV)</span>
           <div className="flex items-center space-x-2 text-[10px]">
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 1: UI</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 2: Hooks</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 3: SPA Router</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 4: Form Validation</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 5: REST API</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded">₹ INR Pricing</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded">FASTag Enabled</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded">18% GST Compliant</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded">Auth Ready</span>
           </div>
         </div>
       </div>
 
-      {/* Navigation Bar (Experiment 1 & 3) */}
+      {/* Navigation Bar (Experiment 1 & 3 & Auth) */}
       <Navbar />
 
-      {/* Main Routed Page Content (Experiment 3) */}
+      {/* Main Routed Page Content */}
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
@@ -43,6 +44,8 @@ const AppContent = () => {
           <Route path="/cars/:id" element={<CarDetails />} />
           <Route path="/book/:id" element={<BookingPage />} />
           <Route path="/my-bookings" element={<MyBookings />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<SignUp />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
