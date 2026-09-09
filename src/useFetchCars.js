@@ -1,16 +1,25 @@
 import { useEffect, useContext } from 'react';
 import { CarContext } from './CarContext';
+import { fetchCarsFromAPI } from './services/api';
 
 export const useFetchCars = () => {
     const { setFleet, setLoading } = useContext(CarContext);
 
     useEffect(() => {
-        // Simulating an API call to a backend database with a timeout
         const fetchVehicleData = async () => {
             setLoading(true);
-            
-            // Mock data representing the rental database inventory with rich details
-            const mockData = [
+
+            // 1. Attempt live API request to Express backend (Experiment 5)
+            const liveData = await fetchCarsFromAPI();
+
+            if (liveData && Array.isArray(liveData) && liveData.length > 0) {
+                setFleet(liveData);
+                setLoading(false);
+                return;
+            }
+
+            // 2. Resilient fallback dataset if backend server is not yet started
+            const fallbackData = [
                 { 
                     id: 1, 
                     make: 'Porsche', 
@@ -98,9 +107,9 @@ export const useFetchCars = () => {
             ];
 
             setTimeout(() => {
-                setFleet(mockData);
+                setFleet(fallbackData);
                 setLoading(false);
-            }, 1000); // 1-second delay to simulate network request
+            }, 600);
         };
 
         fetchVehicleData();
