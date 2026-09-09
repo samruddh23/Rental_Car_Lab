@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 
+import { loginAPI, signupAPI } from './services/api';
+
 // 1. Create the Context
 export const CarContext = createContext();
 
@@ -49,8 +51,15 @@ export const CarProvider = ({ children }) => {
     }, [user]);
 
     // Authentication Handlers
-    const login = (emailOrPhone, _password) => {
-        // Mock authentication check
+    const login = async (emailOrPhone, password) => {
+        // Attempt backend MongoDB authentication
+        const backendUser = await loginAPI(emailOrPhone, password);
+        if (backendUser) {
+            setUser(backendUser);
+            return backendUser;
+        }
+
+        // Mock fallback authentication check
         const loggedInUser = {
             id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
             name: emailOrPhone.includes('@') ? emailOrPhone.split('@')[0] : 'Samruddh Jadhav',
@@ -63,12 +72,20 @@ export const CarProvider = ({ children }) => {
         return loggedInUser;
     };
 
-    const signup = (userData) => {
+    const signup = async (userData) => {
+        // Attempt backend MongoDB registration
+        const backendUser = await signupAPI(userData);
+        if (backendUser) {
+            setUser(backendUser);
+            return backendUser;
+        }
+
+        // Fallback user creation
         const newUser = {
             id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
             name: userData.fullName || 'Samruddh Jadhav',
             email: userData.email,
-            phone: userData.phone.startsWith('+91') ? userData.phone : `+91 ${userData.phone}`,
+            phone: userData.phone && userData.phone.startsWith('+91') ? userData.phone : `+91 ${userData.phone || '98201 45678'}`,
             city: userData.city || 'Mumbai',
             avatar: userData.fullName ? userData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'IN'
         };

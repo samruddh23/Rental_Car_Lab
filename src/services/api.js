@@ -58,3 +58,50 @@ export const cancelBookingAPI = async (bookingId) => {
     return null;
   }
 };
+
+/**
+ * User login via REST API with offline fallback
+ */
+export const loginAPI = async (emailOrPhone, password) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailOrPhone, password })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.message || 'Login failed');
+    }
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.warn('Backend Auth login unavailable, falling back to client-side auth:', error.message);
+    return null;
+  }
+};
+
+/**
+ * User registration via REST API with offline fallback
+ */
+export const signupAPI = async (userData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData)
+    });
+
+    if (!response.ok) {
+      const errData = await response.json();
+      throw new Error(errData.message || 'Registration failed');
+    }
+    const data = await response.json();
+    return data.user;
+  } catch (error) {
+    console.warn('Backend Auth signup unavailable, falling back to client-side auth:', error.message);
+    return null;
+  }
+};
+

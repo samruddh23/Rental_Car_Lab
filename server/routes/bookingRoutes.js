@@ -1,23 +1,43 @@
 import express from 'express';
+import Booking from '../models/Booking.js';
+import { isDBConnected } from '../config/db.js';
 
 const router = express.Router();
 
-// In-memory data store for bookings
-let bookings = [];
+// In-memory data store fallback for bookings
+let fallbackBookings = [];
 
 // @route   GET /api/bookings
 // @desc    Get all user bookings
-router.get('/', (req, res) => {
-  res.json({
-    success: true,
-    count: bookings.length,
-    data: bookings
-  });
+router.get('/', async (req, res) => {
+  try {
+    if (isDBConnected()) {
+      const bookings = await Booking.find().sort({ createdAt: -1 });
+      return res.json({
+        success: true,
+        source: 'mongodb',
+        count: bookings.length,
+        data: bookings
+      });
+    } else {
+      return res.json({
+        success: true,
+        source: 'in-memory-fallback',
+        count: fallbackBookings.length,
+        data: fallbackBookings
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve bookings: ' + error.message
+    });
+  }
 });
 
 // @route   POST /api/bookings
 // @desc    Create a new rental booking reservation
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const {
     carId,
     carMake,
@@ -33,6 +53,7 @@ router.post('/', (req, res) => {
     customerEmail,
     customerPhone,
     licenseNumber,
+    aadhaarNumber,
     totalAmount
   } = req.body;
 
@@ -44,17 +65,15 @@ router.post('/', (req, res) => {
     });
   }
 
-  const newBooking = {
-    id: 'BK-' + Date.now().toString().slice(-6),
-    createdAt: new Date().toISOString(),
-    status: 'Confirmed',
+  const bookingPayload = {
+    id: 'BK-IN-' + Date.now().toString().slice(-6),
     carId,
     carMake: carMake || 'Vehicle',
     carModel: carModel || '',
     carType: carType || 'Standard',
     carImage: carImage || '',
-    pickupLocation: pickupLocation || 'Showroom',
-    returnLocation: returnLocation || 'Showroom',
+    pickupLocation: pickupLocation || 'Mumbai Central Hub',
+    returnLocation: returnLocation || 'Mumbai Central Hub',
     pickupDate,
     returnDate,
     days: Number(days) || 1,
@@ -62,36 +81,85 @@ router.post('/', (req, res) => {
     customerEmail,
     customerPhone,
     licenseNumber,
-    totalAmount: Number(totalAmount) || 0
+    aadhaarNumber: aadhaarNumber || '',
+    totalAmount: Number(totalAmount) || 0,
+    currency: 'INR',
+    status: 'Confirmed'
   };
 
-  bookings.unshift(newBooking);
+  try {
+    if (isDBConnected()) {
+      const newBooking = await Booking.create(bookingPayload);
+      return res.status(201).json({
+        success: true,
+        source: 'mongodb',
+        message: 'Booking reservation confirmed and saved in MongoDB',
+        data: newBooking
+      });
+    } else {
+      const newBooking = {
+        ...bookingPayload,
+        createdAt: new Date().toISOString()
+      };
+      fallbackBookings.unshift(newBooking);
 
-  res.status(201).json({
-    success: true,
-    message: 'Booking reservation confirmed',
-    data: newBooking
-  });
+      return res.status(201).json({
+        success: true,
+        source: 'in-memory-fallback',
+        message: 'Booking reservation confirmed (in-memory mode)',
+        data: newBooking
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to create booking: ' + error.message
+    });
+  }
 });
 
 // @route   DELETE /api/bookings/:id
 // @desc    Cancel a booking by ID
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   const { id } = req.params;
-  const initialLength = bookings.length;
-  bookings = bookings.filter(b => b.id !== id);
 
-  if (bookings.length === initialLength) {
-    return res.status(404).json({
+  try {
+    if (isDBConnected()) {
+      const deleted = await Booking.findOneAndDelete({ id });
+      if (!deleted) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking with ID ${id} not found in MongoDB`
+        });
+      }
+      return res.json({
+        success: true,
+        source: 'mongodb',
+        message: `Booking ${id} cancelled and removed from MongoDB`
+      });
+    } else {
+      const initialLength = fallbackBookings.length;
+      fallbackBookings = fallbackBookings.filter(b => b.id !== id);
+
+      if (fallbackBookings.length === initialLength) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking with ID ${id} not found`
+        });
+      }
+
+      return res.json({
+        success: true,
+        source: 'in-memory-fallback',
+        message: `Booking ${id} cancelled successfully`
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
       success: false,
-      message: `Booking with ID ${id} not found`
+      message: 'Failed to cancel booking: ' + error.message
     });
   }
-
-  res.json({
-    success: true,
-    message: `Booking ${id} cancelled successfully`
-  });
 });
 
 export default router;
