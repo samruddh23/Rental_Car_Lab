@@ -118,6 +118,107 @@ router.post('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/bookings/:id
+// @desc    Get single booking by ID
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (isDBConnected()) {
+      const booking = await Booking.findOne({ id });
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking with ID ${id} not found in MongoDB`
+        });
+      }
+      return res.json({
+        success: true,
+        source: 'mongodb',
+        data: booking
+      });
+    } else {
+      const booking = fallbackBookings.find(b => b.id === id);
+      if (!booking) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking with ID ${id} not found`
+        });
+      }
+      return res.json({
+        success: true,
+        source: 'in-memory-fallback',
+        data: booking
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve booking: ' + error.message
+    });
+  }
+});
+
+// @route   PUT /api/bookings/:id/status
+// @desc    Update booking reservation status - Experiment 6 CRUD Update
+router.put('/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!status) {
+    return res.status(400).json({
+      success: false,
+      message: 'Status value is required (Confirmed, Ongoing, Completed, Cancelled)'
+    });
+  }
+
+  try {
+    if (isDBConnected()) {
+      const updated = await Booking.findOneAndUpdate(
+        { id },
+        { $set: { status } },
+        { new: true }
+      );
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking with ID ${id} not found in MongoDB`
+        });
+      }
+
+      return res.json({
+        success: true,
+        source: 'mongodb',
+        message: `Booking ${id} status updated to "${status}" in MongoDB`,
+        data: updated
+      });
+    } else {
+      const bookingIndex = fallbackBookings.findIndex(b => b.id === id);
+      if (bookingIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: `Booking with ID ${id} not found`
+        });
+      }
+
+      fallbackBookings[bookingIndex].status = status;
+
+      return res.json({
+        success: true,
+        source: 'in-memory-fallback',
+        message: `Booking ${id} status updated to "${status}" (in-memory mode)`,
+        data: fallbackBookings[bookingIndex]
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update booking status: ' + error.message
+    });
+  }
+});
+
 // @route   DELETE /api/bookings/:id
 // @desc    Cancel a booking by ID
 router.delete('/:id', async (req, res) => {
@@ -163,3 +264,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+

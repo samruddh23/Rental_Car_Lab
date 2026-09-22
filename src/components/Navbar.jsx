@@ -62,6 +62,18 @@ export const Navbar = () => {
               </span>
             )}
           </NavLink>
+          <NavLink to="/admin" className={({ isActive }) => 
+            `text-sm font-semibold transition px-3 py-1.5 rounded-lg flex items-center space-x-1 ${
+              isActive 
+                ? 'text-purple-600 bg-purple-50 font-bold border border-purple-200' 
+                : 'text-purple-700 hover:text-purple-900 hover:bg-purple-50'
+            }`
+          }>
+            <span>Admin Portal</span>
+            <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-black">
+              Exp 6-7
+            </span>
+          </NavLink>
         </div>
 
         {/* User Authentication Status or CTA */}
@@ -69,10 +81,12 @@ export const Navbar = () => {
           {user ? (
             <div className="flex items-center space-x-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-1.5 pl-3">
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 block font-medium leading-none">Namaste 🙏</span>
+                <span className="text-[10px] text-slate-400 block font-medium leading-none">
+                  {user.role === 'admin' ? '👑 Admin' : 'Customer'} • Namaste 🙏
+                </span>
                 <span className="text-xs font-bold text-slate-800 leading-tight block">{user.name}</span>
               </div>
-              <div className="w-8 h-8 bg-indigo-600 text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-sm">
+              <div className={`w-8 h-8 ${user.role === 'admin' ? 'bg-purple-600' : 'bg-indigo-600'} text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-sm`}>
                 {user.avatar || 'IN'}
               </div>
               <button
@@ -176,6 +190,16 @@ export const Navbar = () => {
                 {bookings.length}
               </span>
             )}
+          </NavLink>
+          <NavLink 
+            to="/admin" 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm ${isActive ? 'bg-purple-50 text-purple-700' : 'text-purple-600 hover:bg-purple-50'}`}
+          >
+            <span>👑 Admin Portal</span>
+            <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-black">
+              Exp 6 & 7
+            </span>
           </NavLink>
 
           {!user && (

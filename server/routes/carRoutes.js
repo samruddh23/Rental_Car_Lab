@@ -192,4 +192,107 @@ router.post('/', async (req, res) => {
   }
 });
 
+// @route   PUT /api/cars/:id
+// @desc    Update vehicle details (price, availability, specs) - Experiment 6 CRUD Update
+router.put('/:id', async (req, res) => {
+  const carId = parseInt(req.params.id, 10);
+  const updates = req.body;
+
+  try {
+    if (isDBConnected()) {
+      const updatedCar = await Car.findOneAndUpdate(
+        { id: carId },
+        { $set: updates },
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedCar) {
+        return res.status(404).json({
+          success: false,
+          message: `Vehicle with id ${carId} not found in MongoDB`
+        });
+      }
+
+      return res.json({
+        success: true,
+        source: 'mongodb',
+        message: `Vehicle #${carId} updated successfully in MongoDB`,
+        data: updatedCar
+      });
+    } else {
+      const carIndex = fallbackFleet.findIndex(c => c.id === carId);
+      if (carIndex === -1) {
+        return res.status(404).json({
+          success: false,
+          message: `Vehicle with id ${carId} not found`
+        });
+      }
+
+      fallbackFleet[carIndex] = {
+        ...fallbackFleet[carIndex],
+        ...updates
+      };
+
+      return res.json({
+        success: true,
+        source: 'in-memory-fallback',
+        message: `Vehicle #${carId} updated successfully (in-memory mode)`,
+        data: fallbackFleet[carIndex]
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to update vehicle: ' + error.message
+    });
+  }
+});
+
+// @route   DELETE /api/cars/:id
+// @desc    Delete vehicle from fleet - Experiment 6 CRUD Delete
+router.delete('/:id', async (req, res) => {
+  const carId = parseInt(req.params.id, 10);
+
+  try {
+    if (isDBConnected()) {
+      const deletedCar = await Car.findOneAndDelete({ id: carId });
+      if (!deletedCar) {
+        return res.status(404).json({
+          success: false,
+          message: `Vehicle with id ${carId} not found in MongoDB`
+        });
+      }
+
+      return res.json({
+        success: true,
+        source: 'mongodb',
+        message: `Vehicle #${carId} (${deletedCar.make} ${deletedCar.model}) deleted from MongoDB`,
+        data: deletedCar
+      });
+    } else {
+      const initialLength = fallbackFleet.length;
+      fallbackFleet = fallbackFleet.filter(c => c.id !== carId);
+
+      if (fallbackFleet.length === initialLength) {
+        return res.status(404).json({
+          success: false,
+          message: `Vehicle with id ${carId} not found`
+        });
+      }
+
+      return res.json({
+        success: true,
+        source: 'in-memory-fallback',
+        message: `Vehicle #${carId} deleted successfully`
+      });
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to delete vehicle: ' + error.message
+    });
+  }
+});
+
 export default router;
+

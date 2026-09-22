@@ -50,3 +50,16 @@ export const CheckCircleIcon = ({ className = "w-5 h-5 text-emerald-500" }) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
+
+export const CarIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8 17a2 2 0 100 4 2 2 0 000-4zm8 0a2 2 0 100 4 2 2 0 000-4zM3 9l2-4h14l2 4M3 9v8h2m16 0v-8m-2 8H7" />
+  </svg>
+);
+
+export const IndianRupeeIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 8h6m-5 4h5m-5-8h6a3 3 0 013 3 3 3 0 01-3 3H9l6 8" />
+  </svg>
+);
+
