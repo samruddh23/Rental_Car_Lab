@@ -22,19 +22,6 @@ const AppContent = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans flex flex-col selection:bg-indigo-500 selection:text-white">
-      {/* Indian Academic & System Status Banner */}
-      <div className="bg-gradient-to-r from-orange-600 via-indigo-600 to-emerald-700 text-white text-[11px] font-medium py-1.5 px-4 text-center">
-        <div className="container mx-auto max-w-7xl flex flex-wrap items-center justify-center sm:justify-between gap-2">
-          <span>🇮🇳 <strong>ApexDrive Bharat</strong> — Full Stack MERN Platform (Exp 1 - 7 Complete)</span>
-          <div className="flex items-center space-x-2 text-[10px]">
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 6: MongoDB CRUD</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">Exp 7: JWT Security</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">₹ INR Pricing</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded">FASTag Enabled</span>
-          </div>
-        </div>
-      </div>
-
       {/* Navigation Bar (Experiment 1, 3, 6 & 7) */}
       <Navbar />
 
