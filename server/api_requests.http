@@ -1,0 +1,133 @@
+### ====================================================================
+### ApexDrive Bharat - MERN REST API Demonstration (VS Code)
+### Covers Experiment 5 (REST API), Exp 6 (MongoDB CRUD), Exp 7 (JWT)
+### ====================================================================
+
+@baseUrl = http://localhost:5000/api
+@jwtToken = 
+
+### --------------------------------------------------------------------
+### 1. Health Check & MongoDB Connectivity (Exp 5 & 6)
+### --------------------------------------------------------------------
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### ====================================================================
+### EXPERIMENT 6: MONGODB VEHICLE FLEET CRUD OPERATIONS
+### ====================================================================
+
+### 1. READ: Get All Vehicles from MongoDB
+GET {{baseUrl}}/cars
+Content-Type: application/json
+
+### 2. READ: Get Vehicles Filtered by Category (SUV)
+GET {{baseUrl}}/cars?category=suv
+Content-Type: application/json
+
+### 3. READ: Get Single Vehicle by ID
+GET {{baseUrl}}/cars/1
+Content-Type: application/json
+
+### 4. CREATE: Add New Vehicle to MongoDB (CRUD Create)
+POST {{baseUrl}}/cars
+Content-Type: application/json
+
+{
+  "make": "Tata",
+  "model": "Harrier Dark Edition",
+  "type": "Executive Urban SUV",
+  "category": "suv",
+  "price": 3199,
+  "passengers": 5,
+  "transmission": "Automatic",
+  "fuel": "Kryotec 2.0L Diesel",
+  "image": "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800"
+}
+
+### 5. UPDATE: Edit Vehicle Rental Rate in MongoDB (CRUD Update)
+PUT {{baseUrl}}/cars/1
+Content-Type: application/json
+
+{
+  "price": 3799,
+  "available": true
+}
+
+### 6. DELETE: Remove Vehicle from MongoDB (CRUD Delete)
+DELETE {{baseUrl}}/cars/6
+Content-Type: application/json
+
+
+### ====================================================================
+### EXPERIMENT 6: MONGODB RESERVATION BOOKINGS CRUD OPERATIONS
+### ====================================================================
+
+### 1. READ: Get All Bookings
+GET {{baseUrl}}/bookings
+Content-Type: application/json
+
+### 2. CREATE: New Reservation in MongoDB (CRUD Create)
+POST {{baseUrl}}/bookings
+Content-Type: application/json
+
+{
+  "carId": 1,
+  "carMake": "Mahindra",
+  "carModel": "Thar 4x4",
+  "carType": "Off-Road SUV",
+  "pickupLocation": "Mumbai Central Hub",
+  "returnLocation": "Goa Coastal Hub",
+  "pickupDate": "2026-10-01",
+  "returnDate": "2026-10-05",
+  "days": 4,
+  "customerName": "Samruddh Jadhav",
+  "customerEmail": "samruddh.jadhav@ves.ac.in",
+  "customerPhone": "+91 98201 45678",
+  "licenseNumber": "MH02-2023-0091823",
+  "totalAmount": 16515
+}
+
+### 3. UPDATE: Change Booking Status in MongoDB (CRUD Update)
+PUT {{baseUrl}}/bookings/BK-IN-670793/status
+Content-Type: application/json
+
+{
+  "status": "Ongoing"
+}
+
+### 4. READ: Dashboard Analytics from MongoDB Aggregation
+GET {{baseUrl}}/admin/stats
+Content-Type: application/json
+
+
+### ====================================================================
+### EXPERIMENT 7: USER AUTHENTICATION & JWT SECURITY
+### ====================================================================
+
+### 1. User Registration (Password Hashed with Bcrypt + JWT Issued)
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "fullName": "Samruddh Jadhav",
+  "email": "samruddh.jadhav@ves.ac.in",
+  "phone": "+91 98201 45678",
+  "city": "Mumbai",
+  "password": "password123",
+  "role": "admin"
+}
+
+### 2. User Login (Authenticates with Bcrypt & Returns JWT Token)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "samruddh.jadhav@ves.ac.in",
+  "password": "password123"
+}
+
+### 3. Protected Route (Requires Valid JWT Bearer Token)
+# Copy the token received from login and paste it after Bearer:
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{jwtToken}}
+Content-Type: application/json
