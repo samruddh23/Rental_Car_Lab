@@ -2,10 +2,12 @@ import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CarContext } from '../CarContext';
 import { CheckCircleIcon, CalendarIcon, MapPinIcon } from '../components/Icons';
+import { InvoiceModal } from '../components/InvoiceModal';
 
 export const MyBookings = () => {
   const { bookings, cancelBooking } = useContext(CarContext);
   const [cancelModalId, setCancelModalId] = useState(null);
+  const [invoiceBooking, setInvoiceBooking] = useState(null);
 
   const handleCancel = (id) => {
     cancelBooking(id);
@@ -111,7 +113,14 @@ export const MyBookings = () => {
                   <span className="text-xl font-black text-slate-900">₹{booking.totalAmount.toLocaleString('en-IN')} INR</span>
                 </div>
 
-                <div className="mt-2">
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    onClick={() => setInvoiceBooking(booking)}
+                    className="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1"
+                  >
+                    <span>📄</span>
+                    <span>Tax Invoice</span>
+                  </button>
                   <button
                     onClick={() => setCancelModalId(booking.id)}
                     className="text-xs font-semibold text-rose-600 hover:text-rose-800 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition cursor-pointer"
@@ -123,6 +132,14 @@ export const MyBookings = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Experiment 8 GST Tax Invoice Modal */}
+      {invoiceBooking && (
+        <InvoiceModal
+          booking={invoiceBooking}
+          onClose={() => setInvoiceBooking(null)}
+        />
       )}
 
       {/* Confirmation Modal for Cancel */}

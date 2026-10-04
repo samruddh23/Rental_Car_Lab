@@ -1,0 +1,60 @@
+# Docker Compose Orchestration for MERN Car Rental Platform (Experiment 10)
+version: '3.8'
+
+services:
+  # 1. MongoDB Database Service
+  mongodb:
+    image: mongo:7.0
+    container_name: apexdrive_mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: rental_car_db
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - apexdrive_net
+
+  # 2. Node.js & Express REST API Backend
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: apexdrive_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongodb:27017/rental_car_db
+      JWT_SECRET: apexdrive_bharat_jwt_secret_key_2026
+      NODE_ENV: production
+    depends_on:
+      - mongodb
+    volumes:
+      - uploads_data:/app/uploads
+    networks:
+      - apexdrive_net
+
+  # 3. React Vite Frontend Application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: apexdrive_frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - apexdrive_net
+
+networks:
+  apexdrive_net:
+    driver: bridge
+
+volumes:
+  mongo_data:
+  uploads_data:

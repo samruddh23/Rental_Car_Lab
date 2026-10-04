@@ -90,6 +90,14 @@ router.post('/', async (req, res) => {
   try {
     if (isDBConnected()) {
       const newBooking = await Booking.create(bookingPayload);
+      if (req.io) {
+        req.io.emit('new_booking_alert', {
+          id: newBooking.id,
+          car: `${newBooking.carMake} ${newBooking.carModel}`,
+          customer: newBooking.customerName,
+          amount: newBooking.totalAmount
+        });
+      }
       return res.status(201).json({
         success: true,
         source: 'mongodb',
@@ -102,6 +110,14 @@ router.post('/', async (req, res) => {
         createdAt: new Date().toISOString()
       };
       fallbackBookings.unshift(newBooking);
+      if (req.io) {
+        req.io.emit('new_booking_alert', {
+          id: newBooking.id,
+          car: `${newBooking.carMake} ${newBooking.carModel}`,
+          customer: newBooking.customerName,
+          amount: newBooking.totalAmount
+        });
+      }
 
       return res.status(201).json({
         success: true,
@@ -187,6 +203,10 @@ router.put('/:id/status', async (req, res) => {
         });
       }
 
+      if (req.io) {
+        req.io.emit('booking_status_updated', { id, status });
+      }
+
       return res.json({
         success: true,
         source: 'mongodb',
@@ -203,6 +223,10 @@ router.put('/:id/status', async (req, res) => {
       }
 
       fallbackBookings[bookingIndex].status = status;
+
+      if (req.io) {
+        req.io.emit('booking_status_updated', { id, status });
+      }
 
       return res.json({
         success: true,

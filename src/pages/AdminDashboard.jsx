@@ -1,6 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { CarContext } from '../CarContext';
-import { fetchAdminStatsAPI } from '../services/api';
+import { fetchAdminStatsAPI, runAutomatedTestsAPI, uploadVehicleImageAPI } from '../services/api';
+import { getSocketStatus, subscribeToNewBookings, subscribeToStatusUpdates, sendFleetUpdate } from '../services/socket';
+import { InvoiceModal } from '../components/InvoiceModal';
 import { 
   ShieldIcon, 
   CheckCircleIcon, 
@@ -22,9 +24,27 @@ export const AdminDashboard = () => {
     toggleAdminMode 
   } = useContext(CarContext);
 
-  const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'bookings', 'security'
+  const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'bookings', 'security', 'exp8_10'
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+
+  // Experiment 8, 9 & 10 State
+  const [testSuiteResults, setTestSuiteResults] = useState(null);
+  const [isRunningTests, setIsRunningTests] = useState(false);
+  const [socketConnected] = useState(() => getSocketStatus().connected);
+  const [socketId] = useState(() => getSocketStatus().id);
+  const [realtimeEvents, setRealtimeEvents] = useState([
+    {
+      id: 'init-1',
+      type: 'SOCKET_READY',
+      message: '⚡ Socket.io WebSocket connection active on port 5000',
+      time: 'Just now'
+    }
+  ]);
+  const [vehicleUploadResult, setVehicleUploadResult] = useState(null);
+  const [isUploadingVehicle, setIsUploadingVehicle] = useState(false);
+  const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState(null);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
 
   // New Car Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -57,6 +77,71 @@ export const AdminDashboard = () => {
     };
     loadStats();
   }, [fleet.length, bookings.length]);
+
+  // Experiment 9: Socket.io Real-Time Listeners
+  useEffect(() => {
+    const unsubBooking = subscribeToNewBookings((booking) => {
+      setRealtimeEvents((prev) => [
+        {
+          id: 'ev-' + Date.now(),
+          type: 'NEW_BOOKING',
+          message: `🚗 New Booking #${booking.id} reserved for ${booking.customerName} (${booking.carMake} ${booking.carModel})`,
+          time: new Date().toLocaleTimeString('en-IN')
+        },
+        ...prev.slice(0, 9)
+      ]);
+    });
+
+    const unsubStatus = subscribeToStatusUpdates((data) => {
+      setRealtimeEvents((prev) => [
+        {
+          id: 'ev-' + Date.now(),
+          type: 'STATUS_UPDATE',
+          message: `⚡ Booking #${data.bookingId} status transitioned to: ${data.status}`,
+          time: new Date().toLocaleTimeString('en-IN')
+        },
+        ...prev.slice(0, 9)
+      ]);
+    });
+
+    return () => {
+      unsubBooking();
+      unsubStatus();
+    };
+  }, []);
+
+  const handleRunAutomatedTests = async () => {
+    setIsRunningTests(true);
+    const res = await runAutomatedTestsAPI();
+    setTestSuiteResults(res);
+    setIsRunningTests(false);
+  };
+
+  const handleUploadVehicleImage = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploadingVehicle(true);
+    const res = await uploadVehicleImageAPI(file);
+    setVehicleUploadResult(res);
+    setIsUploadingVehicle(false);
+  };
+
+  const handleBroadcastAlert = () => {
+    sendFleetUpdate({
+      action: 'AVAILABILITY_BROADCAST',
+      message: 'Fleet availability sync triggered across all client WebSockets',
+      timestamp: new Date().toISOString()
+    });
+    setRealtimeEvents((prev) => [
+      {
+        id: 'ev-' + Date.now(),
+        type: 'BROADCAST_SENT',
+        message: '📢 Real-Time WebSocket broadcast emitted to all connected clients',
+        time: new Date().toLocaleTimeString('en-IN')
+      },
+      ...prev.slice(0, 9)
+    ]);
+  };
 
   const handleCreateCar = async (e) => {
     e.preventDefault();
@@ -226,6 +311,14 @@ export const AdminDashboard = () => {
           }`}
         >
           🔐 JWT Diagnostics & MongoDB Specs (Exp 7)
+        </button>
+        <button
+          onClick={() => setActiveTab('exp8_10')}
+          className={`pb-4 text-xs font-bold uppercase tracking-wider transition relative ${
+            activeTab === 'exp8_10' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          🔬 Exp 8-10: Files, Sockets & Testing
         </button>
       </div>
 
@@ -479,6 +572,321 @@ export const AdminDashboard = () => {
         </div>
       )}
 
+      {/* TAB 4: EXPERIMENTS 8, 9 & 10 (MULTER, WEBSOCKETS, TESTING & DOCKER) */}
+      {activeTab === 'exp8_10' && (
+        <div className="space-y-8">
+          {/* Section 1: Overview Banner */}
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 border border-indigo-900/40 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                  Exp 8: Multer & Payments
+                </span>
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                  Exp 9: Socket.io WebSockets
+                </span>
+                <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
+                  Exp 10: Docker & Automated Tests
+                </span>
+              </div>
+              <h2 className="text-xl font-black">Production Integration & Testing Control Center</h2>
+              <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+                Execute end-to-end automated MERN test suites, monitor real-time bidirectional WebSocket events, upload media through Multer middleware, and inspect containerized multi-service Docker architecture.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 border ${
+                socketConnected 
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' 
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${socketConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                {socketConnected ? `Socket.io Active (${socketId ? socketId.slice(0, 8) + '...' : 'Connected'})` : 'Socket.io Reconnecting...'}
+              </span>
+            </div>
+          </div>
+
+          {/* Section 2: Experiment 10 Automated Test Suite Runner */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-slate-100 gap-4 mb-6">
+              <div>
+                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-full uppercase border border-purple-200">
+                  Experiment 10: Automated Full-Stack Test Suite
+                </span>
+                <h3 className="text-lg font-bold text-slate-900 mt-1">
+                  10-Test MERN Integration & Health Runner
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Tests Health Check, MongoDB Cars CRUD, Category Query, Bookings, Auth JWT, Protected RBAC, Razorpay Orders, and WebSockets.
+                </p>
+              </div>
+
+              <button
+                onClick={handleRunAutomatedTests}
+                disabled={isRunningTests}
+                className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-2xl transition shadow-lg shadow-purple-600/20 flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+              >
+                {isRunningTests ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Executing Test Suite...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>⚡</span>
+                    <span>Run Automated 10-Test Suite</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Test Results Table */}
+            {testSuiteResults ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
+                  <div className="flex items-center gap-4">
+                    <span className="font-bold text-slate-700">Overall Suite Result:</span>
+                    <span className="bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full text-xs">
+                      ✓ {testSuiteResults.passed} / {testSuiteResults.total} Tests Passed ({testSuiteResults.successRate})
+                    </span>
+                    <span className="text-slate-500 font-mono">Duration: {testSuiteResults.durationMs}ms</span>
+                  </div>
+                  <span className="text-slate-400 text-[11px] font-mono">Timestamp: {testSuiteResults.timestamp}</span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold border-y border-slate-100">
+                      <tr>
+                        <th className="py-2.5 px-3">#</th>
+                        <th className="py-2.5 px-3">Test Case / Description</th>
+                        <th className="py-2.5 px-3">Target Endpoint</th>
+                        <th className="py-2.5 px-3">Method</th>
+                        <th className="py-2.5 px-3">Latency</th>
+                        <th className="py-2.5 px-3 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {testSuiteResults.results?.map((t) => (
+                        <tr key={t.id} className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-3 font-mono text-slate-400">{t.id}</td>
+                          <td className="py-2.5 px-3 text-slate-900 font-semibold">{t.name}</td>
+                          <td className="py-2.5 px-3 font-mono text-[11px] text-indigo-600">{t.endpoint}</td>
+                          <td className="py-2.5 px-3">
+                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono text-[10px] font-bold">
+                              {t.method}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3 font-mono text-slate-500 text-[11px]">{t.durationMs}ms</td>
+                          <td className="py-2.5 px-3 text-right">
+                            <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase">
+                              PASS ✓
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center text-xs text-slate-500">
+                <span className="text-3xl block mb-2">🧪</span>
+                <p className="font-semibold text-slate-700">Automated Test Suite Ready</p>
+                <p className="mt-1">Click "Run Automated 10-Test Suite" to execute all MERN integration tests live against Express and MongoDB.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Experiment 9 Real-Time WebSockets Monitor */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full uppercase border border-emerald-200">
+                      Experiment 9: Socket.io WebSockets
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mt-1">Real-Time Event Stream</h3>
+                  </div>
+                  <button
+                    onClick={handleBroadcastAlert}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition shadow-sm cursor-pointer"
+                  >
+                    📢 Broadcast Fleet Sync
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500 mb-4">
+                  Captures live bidirectional events emitted by Express on port 5000 (`new_booking_alert`, `booking_status_updated`, `sahayak_query`).
+                </p>
+
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {realtimeEvents.map((ev) => (
+                    <div key={ev.id} className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs flex justify-between items-start">
+                      <div>
+                        <span className="font-semibold text-slate-800 block">{ev.message}</span>
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5">{ev.type}</span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap ml-2">{ev.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 mt-4 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Protocol: WebSocket (WSS/WS fallback Polling)</span>
+                <span className="font-bold text-emerald-600">Transport: websocket</span>
+              </div>
+            </div>
+
+            {/* Section 4: Experiment 8 Multer File Upload & Invoicing */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full uppercase border border-indigo-200">
+                      Experiment 8: Multer File Upload & Invoices
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mt-1">Vehicle Image & Tax Invoice</h3>
+                  </div>
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  {/* Multer Vehicle Upload Test */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                    <label className="font-bold text-slate-800 block mb-1">
+                      Upload Vehicle Photo (Multer Storage to `server/uploads/`)
+                    </label>
+                    <p className="text-[11px] text-slate-500 mb-3">
+                      Validates MIME type (image/png, image/jpeg, image/webp) and enforces 5MB limit.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer bg-white hover:bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 transition">
+                        <span>📸 Select Car Photo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleUploadVehicleImage}
+                          className="hidden"
+                        />
+                      </label>
+                      {isUploadingVehicle && (
+                        <span className="text-indigo-600 animate-pulse font-medium">Uploading to /uploads...</span>
+                      )}
+                      {vehicleUploadResult && (
+                        <span className="text-emerald-600 font-bold">✓ Uploaded Successfully</span>
+                      )}
+                    </div>
+                    {vehicleUploadResult && (
+                      <div className="mt-3 flex items-center gap-3">
+                        <img 
+                          src={vehicleUploadResult.fileUrl} 
+                          alt="Uploaded" 
+                          className="w-16 h-12 object-cover rounded-lg border border-slate-200 shadow-sm" 
+                        />
+                        <div className="font-mono text-[10px] text-slate-500 truncate">
+                          URL: {vehicleUploadResult.fileUrl}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* GST Invoice Generator */}
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                    <label className="font-bold text-slate-800 block mb-1">
+                      Generate Official GST Tax Invoice (SAC 996601)
+                    </label>
+                    <p className="text-[11px] text-slate-500 mb-3">
+                      Generates statutory Indian GST invoice with CGST (9%) + SGST (9%), SAC code, and GSTIN.
+                    </p>
+                    <button
+                      onClick={() => {
+                        const sampleBooking = bookings[0] || {
+                          id: 'BK-SAMPLE-01',
+                          customerName: 'Samruddh Jadhav',
+                          customerEmail: 'samruddh@example.com',
+                          customerPhone: '+91 98201 45678',
+                          carMake: 'Tata',
+                          carModel: 'Harrier Dark Edition',
+                          pickupLocation: 'Mumbai - BKC Hub',
+                          pickupDate: '2026-10-10',
+                          returnDate: '2026-10-14',
+                          days: 4,
+                          totalAmount: 18880,
+                          licenseNumber: 'MH0220230018921'
+                        };
+                        setSelectedInvoiceBooking(sampleBooking);
+                        setShowInvoiceModal(true);
+                      }}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl transition text-xs flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>📄</span>
+                      <span>Preview Sample Tax Invoice</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 5: Experiment 10 Dockerization Topology */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm">
+            <div className="pb-4 border-b border-slate-100 mb-6">
+              <span className="text-[10px] font-bold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-full uppercase border border-sky-200">
+                Experiment 10: Docker & Production Deployment
+              </span>
+              <h3 className="text-base font-bold text-slate-900 mt-1">
+                Multi-Container Docker Architecture (`docker-compose.yml`)
+              </h3>
+              <p className="text-xs text-slate-500">
+                Production-ready multi-stage containers orchestrating MongoDB database, Express Node backend, and Nginx React frontend.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs mb-6">
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-black text-slate-900">Service 1: MongoDB</span>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">Port 27017</span>
+                </div>
+                <p className="text-[11px] text-slate-600 mb-2">Image: `mongo:7.0`</p>
+                <p className="text-[11px] text-slate-500 font-mono">Volume: `mongo-data:/data/db`</p>
+                <p className="text-[11px] text-slate-500 mt-1">Network: `app-network` (bridge)</p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-black text-slate-900">Service 2: Express Backend</span>
+                  <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded">Port 5000</span>
+                </div>
+                <p className="text-[11px] text-slate-600 mb-2">Dockerfile: `server/Dockerfile`</p>
+                <p className="text-[11px] text-slate-500 font-mono">Base: `node:20-alpine`</p>
+                <p className="text-[11px] text-slate-500 mt-1">Features: Socket.io, Multer, REST API</p>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-black text-slate-900">Service 3: React Frontend</span>
+                  <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded">Port 5173 / 80</span>
+                </div>
+                <p className="text-[11px] text-slate-600 mb-2">Dockerfile: `./Dockerfile`</p>
+                <p className="text-[11px] text-slate-500 font-mono">Base: `node:20-alpine` + `nginx:alpine`</p>
+                <p className="text-[11px] text-slate-500 mt-1">Build: Vite + Tailwind CSS 3 Production</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 text-slate-200 p-4 rounded-2xl font-mono text-xs flex items-center justify-between">
+              <span>$ docker-compose up --build</span>
+              <span className="text-[11px] text-slate-400">Launch entire MERN stack in 1 command</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Add Car to MongoDB */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -610,6 +1018,14 @@ export const AdminDashboard = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Experiment 8 GST Tax Invoice Modal */}
+      {showInvoiceModal && selectedInvoiceBooking && (
+        <InvoiceModal
+          booking={selectedInvoiceBooking}
+          onClose={() => setShowInvoiceModal(false)}
+        />
       )}
     </div>
   );

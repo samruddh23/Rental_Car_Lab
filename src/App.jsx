@@ -4,6 +4,7 @@ import { CarProvider } from './CarContext';
 import { useFetchCars } from './useFetchCars';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { SahayakChat } from './components/SahayakChat';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { Fleet } from './pages/Fleet';
@@ -70,6 +71,9 @@ const AppContent = () => {
 
       {/* Footer */}
       <Footer />
+
+      {/* Experiment 9: Real-Time WebSocket Support Chat Widget */}
+      <SahayakChat />
     </div>
   );
 };
