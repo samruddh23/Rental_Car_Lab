@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "server": "node server/server.js",
+    "start": "node server/server.js",
     "build": "vite build",
+    "render-build": "npm install && npm run build && cd server && npm install",
     "lint": "oxlint",
     "preview": "vite preview"
   },
