@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 import { connectDB, isDBConnected } from './config/db.js';
 import carRoutes from './routes/carRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
-import authRoutes from './routes/authRoutes.js';
+import authRoutes, { seedDefaultUsers } from './routes/authRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
@@ -134,8 +134,9 @@ if (fs.existsSync(distPath)) {
 
 // Start Server and initialize Database Connection
 const startServer = async () => {
-  // Connect to MongoDB
+  // Connect to MongoDB & seed initial users
   await connectDB();
+  await seedDefaultUsers();
 
   httpServer.listen(PORT, () => {
     console.log(`=========================================`);

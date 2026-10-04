@@ -3,6 +3,8 @@ dotenv.config();
 
 import mongoose from 'mongoose';
 import Car from './models/Car.js';
+import User from './models/User.js';
+import { defaultUsers } from './routes/authRoutes.js';
 
 export const initialIndianFleet = [
   { 
@@ -110,6 +112,15 @@ const seedDatabase = async () => {
 
     await Car.insertMany(initialIndianFleet);
     console.log(`Successfully seeded ${initialIndianFleet.length} Indian vehicles into MongoDB!`);
+
+    for (const u of defaultUsers) {
+      const exists = await User.findOne({ email: u.email.toLowerCase() });
+      if (!exists) {
+        await User.create(u);
+        console.log(`👤 Seeded user: ${u.email} (${u.role})`);
+      }
+    }
+    console.log('Seeded preconfigured admin and customer accounts.');
 
     await mongoose.disconnect();
     console.log('Database connection closed.');

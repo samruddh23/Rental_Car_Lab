@@ -101,20 +101,69 @@ export const CarProvider = ({ children }) => {
             return authResponse.user;
         }
 
-        // Mock fallback authentication check
-        const isAdminUser = emailOrPhone.toLowerCase().includes('admin');
-        const loggedInUser = {
-            id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
-            name: emailOrPhone.includes('@') ? emailOrPhone.split('@')[0] : 'Samruddh Jadhav',
-            email: emailOrPhone.includes('@') ? emailOrPhone : 'samruddh.jadhav@ves.ac.in',
-            phone: !emailOrPhone.includes('@') ? emailOrPhone : '+91 98201 45678',
-            city: 'Mumbai',
-            role: isAdminUser ? 'admin' : 'customer',
-            avatar: 'SJ'
-        };
-        setUser(loggedInUser);
-        setToken('simulated_jwt_token_' + Date.now());
-        return loggedInUser;
+        // Verified Preconfigured Accounts: 1 Admin + 2 Customers
+        const verifiedAccounts = [
+            {
+                id: 'USR-ADMIN-01',
+                name: 'ApexDrive Administrator',
+                email: 'admin@apexdrive.in',
+                phone: '+91 98200 00000',
+                city: 'Mumbai',
+                password: 'Admin@123',
+                role: 'admin',
+                avatar: 'AD'
+            },
+            {
+                id: 'USR-CUST-01',
+                name: 'Rahul Sharma',
+                email: 'rahul.sharma@gmail.com',
+                phone: '+91 98201 12345',
+                city: 'Mumbai',
+                password: 'Customer@123',
+                role: 'customer',
+                avatar: 'RS'
+            },
+            {
+                id: 'USR-CUST-02',
+                name: 'Priya Patel',
+                email: 'priya.patel@gmail.com',
+                phone: '+91 98202 67890',
+                city: 'Bengaluru',
+                password: 'Customer@456',
+                role: 'customer',
+                avatar: 'PP'
+            }
+        ];
+
+        const trimmedInput = emailOrPhone.trim().toLowerCase();
+        const matched = verifiedAccounts.find(
+            u => (u.email.toLowerCase() === trimmedInput || u.phone === emailOrPhone.trim()) && u.password === password
+        );
+
+        if (matched) {
+            const { password: _, ...safeUser } = matched;
+            setUser(safeUser);
+            setToken('simulated_jwt_token_' + Date.now());
+            return safeUser;
+        }
+
+        // Check locally registered accounts in session
+        try {
+            const registered = JSON.parse(localStorage.getItem('apexdrive_registered_users') || '[]');
+            const found = registered.find(
+                u => (u.email.toLowerCase() === trimmedInput || u.phone === emailOrPhone.trim()) && u.password === password
+            );
+            if (found) {
+                const { password: _, ...safeUser } = found;
+                setUser(safeUser);
+                setToken('simulated_jwt_token_' + Date.now());
+                return safeUser;
+            }
+        } catch {
+            // ignore
+        }
+
+        throw new Error('Invalid email or password. Please check your credentials.');
     };
 
     const signup = async (userData) => {
@@ -127,16 +176,26 @@ export const CarProvider = ({ children }) => {
         }
 
         // Fallback user creation
-        const isAdminUser = userData.email?.toLowerCase().includes('admin') || userData.role === 'admin';
+        const isAdminUser = userData.role === 'admin' || userData.email?.toLowerCase() === 'admin@apexdrive.in';
         const newUser = {
             id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
-            name: userData.fullName || 'Samruddh Jadhav',
+            name: userData.fullName || 'Registered User',
             email: userData.email,
-            phone: userData.phone && userData.phone.startsWith('+91') ? userData.phone : `+91 ${userData.phone || '98201 45678'}`,
+            phone: userData.phone && userData.phone.startsWith('+91') ? userData.phone : `+91 ${userData.phone || '98201 00000'}`,
             city: userData.city || 'Mumbai',
             role: isAdminUser ? 'admin' : 'customer',
-            avatar: userData.fullName ? userData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'IN'
+            avatar: userData.fullName ? userData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'CU'
         };
+
+        // Cache registered user in localStorage
+        try {
+            const registered = JSON.parse(localStorage.getItem('apexdrive_registered_users') || '[]');
+            registered.push({ ...newUser, password: userData.password });
+            localStorage.setItem('apexdrive_registered_users', JSON.stringify(registered));
+        } catch {
+            // ignore
+        }
+
         setUser(newUser);
         setToken('simulated_jwt_token_' + Date.now());
         return newUser;
@@ -147,15 +206,6 @@ export const CarProvider = ({ children }) => {
         setToken(null);
         localStorage.removeItem('apexdrive_token');
         localStorage.removeItem('apexdrive_user');
-    };
-
-    // Toggle Role helper for Lab Examiners / Testing
-    const toggleAdminMode = () => {
-        if (!user) return;
-        const newRole = user.role === 'admin' ? 'customer' : 'admin';
-        const updated = { ...user, role: newRole };
-        setUser(updated);
-        localStorage.setItem('apexdrive_user', JSON.stringify(updated));
     };
 
     // Booking Handlers (Experiment 4 & 6 CRUD)
@@ -227,8 +277,7 @@ export const CarProvider = ({ children }) => {
             isAdmin: user?.role === 'admin',
             login,
             signup,
-            logout,
-            toggleAdminMode
+            logout
         }}>
             {children}
         </CarContext.Provider>

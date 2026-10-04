@@ -21,18 +21,65 @@ const generateToken = (user) => {
   );
 };
 
-// In-memory user fallback
-let fallbackUsers = [
+// Preconfigured verified accounts: 1 Admin + 2 Customers
+export const defaultUsers = [
   {
-    id: 'USR-ADMIN',
-    fullName: 'Chief Fleet Admin',
+    id: 'USR-ADMIN-01',
+    fullName: 'ApexDrive Administrator',
     email: 'admin@apexdrive.in',
     phone: '+91 98200 00000',
     city: 'Mumbai',
-    password: 'adminpassword123',
+    password: 'Admin@123',
     role: 'admin'
+  },
+  {
+    id: 'USR-CUST-01',
+    fullName: 'Rahul Sharma',
+    email: 'rahul.sharma@gmail.com',
+    phone: '+91 98201 12345',
+    city: 'Mumbai',
+    password: 'Customer@123',
+    role: 'customer'
+  },
+  {
+    id: 'USR-CUST-02',
+    fullName: 'Priya Patel',
+    email: 'priya.patel@gmail.com',
+    phone: '+91 98202 67890',
+    city: 'Bengaluru',
+    password: 'Customer@456',
+    role: 'customer'
   }
 ];
+
+let fallbackUsers = [...defaultUsers];
+
+export const seedDefaultUsers = async () => {
+  if (!isDBConnected()) return;
+  try {
+    for (const defUser of defaultUsers) {
+      const existing = await User.findOne({ email: defUser.email.toLowerCase() });
+      if (!existing) {
+        await User.create({
+          fullName: defUser.fullName,
+          email: defUser.email.toLowerCase(),
+          phone: defUser.phone,
+          city: defUser.city,
+          password: defUser.password,
+          role: defUser.role
+        });
+        console.log(`👤 Seeded user into MongoDB: ${defUser.email} (${defUser.role})`);
+      } else {
+        if (existing.role !== defUser.role) {
+          existing.role = defUser.role;
+          await existing.save();
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('⚠️ Error seeding default users in MongoDB:', err.message);
+  }
+};
 
 // @route   POST /api/auth/signup
 // @desc    Register a new user & return JWT token (Experiment 7)
@@ -186,23 +233,22 @@ router.post('/login', async (req, res) => {
         }
       });
     } else {
-      // In-memory check or mock accept
-      const user = fallbackUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-      if (user && user.password !== password) {
+      // In-memory check: match existing fallback users or newly registered users
+      const user = fallbackUsers.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+      if (!user || user.password !== password) {
         return res.status(401).json({
           success: false,
           message: 'Invalid email or password'
         });
       }
 
-      const userName = user ? user.fullName : (email.includes('@') ? email.split('@')[0] : 'Member');
       const authUser = {
-        id: user ? user.id : 'USR-' + Math.floor(1000 + Math.random() * 9000),
-        fullName: userName,
-        email: email.toLowerCase(),
-        phone: user ? user.phone : '+91 98201 45678',
-        city: user ? user.city : 'Mumbai',
-        role: user ? user.role : (email.includes('admin') ? 'admin' : 'customer')
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email.toLowerCase(),
+        phone: user.phone,
+        city: user.city,
+        role: user.role
       };
 
       const token = generateToken(authUser);

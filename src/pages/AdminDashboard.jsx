@@ -20,8 +20,7 @@ export const AdminDashboard = () => {
     addCar, 
     updateCar, 
     deleteCar, 
-    updateBookingStatus, 
-    toggleAdminMode 
+    updateBookingStatus 
   } = useContext(CarContext);
 
   const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'bookings', 'security', 'exp8_10'
@@ -212,13 +211,9 @@ export const AdminDashboard = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={toggleAdminMode}
-              className="bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 text-xs font-bold px-4 py-2.5 rounded-xl transition"
-              title="Toggle role between Admin and Customer to test Protected Routes"
-            >
-              🔄 Switch to Customer View
-            </button>
+            <span className="bg-purple-900/60 border border-purple-500/40 text-purple-200 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2">
+              <span>👑</span> Verified Admin: {user?.email || 'admin@apexdrive.in'}
+            </span>
             <button
               onClick={() => setShowAddModal(true)}
               className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase tracking-wider px-5 py-2.5 rounded-xl transition shadow-lg shadow-indigo-600/30 flex items-center gap-2"
