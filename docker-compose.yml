@@ -18,6 +18,7 @@ services:
 
   # 2. Node.js & Express REST API Backend
   backend:
+    image: samruddh23/apexdrive-backend:latest
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -39,6 +40,7 @@ services:
 
   # 3. React Vite Frontend Application
   frontend:
+    image: samruddh23/apexdrive-frontend:latest
     build:
       context: .
       dockerfile: Dockerfile
