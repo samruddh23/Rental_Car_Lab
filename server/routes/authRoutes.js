@@ -9,12 +9,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'apexdrive_bharat_jwt_secret_key_20
 
 // Helper to generate JWT token (Experiment 7)
 const generateToken = (user) => {
+  const isDedicatedAdmin = (user.email || '').toLowerCase().trim() === 'admin@apexdrive.in';
   return jwt.sign(
     {
       id: user._id || user.id,
       email: user.email,
       name: user.fullName || user.name,
-      role: user.role || 'customer'
+      role: isDedicatedAdmin ? 'admin' : 'customer'
     },
     JWT_SECRET,
     { expiresIn: '7d' }
@@ -76,6 +77,12 @@ export const seedDefaultUsers = async () => {
         }
       }
     }
+
+    // Demote any other account in MongoDB to 'customer' (strictly 1 admin)
+    await User.updateMany(
+      { email: { $ne: 'admin@apexdrive.in' }, role: 'admin' },
+      { $set: { role: 'customer' } }
+    );
   } catch (err) {
     console.warn('⚠️ Error seeding default users in MongoDB:', err.message);
   }
@@ -84,7 +91,7 @@ export const seedDefaultUsers = async () => {
 // @route   POST /api/auth/signup
 // @desc    Register a new user & return JWT token (Experiment 7)
 router.post('/signup', async (req, res) => {
-  const { fullName, email, phone, city, password, role } = req.body;
+  const { fullName, email, phone, city, password } = req.body;
 
   if (!fullName || !email || !password) {
     return res.status(400).json({
@@ -93,7 +100,8 @@ router.post('/signup', async (req, res) => {
     });
   }
 
-  const assignedRole = role === 'admin' || email.toLowerCase().includes('admin') ? 'admin' : 'customer';
+  // Strictly enforce: only admin@apexdrive.in can ever have admin role
+  const assignedRole = email.toLowerCase().trim() === 'admin@apexdrive.in' ? 'admin' : 'customer';
 
   try {
     if (isDBConnected()) {
@@ -228,7 +236,7 @@ router.post('/login', async (req, res) => {
           email: user.email,
           phone: user.phone,
           city: user.city,
-          role: user.role || 'customer',
+          role: user.email.toLowerCase().trim() === 'admin@apexdrive.in' ? 'admin' : 'customer',
           avatar: user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
         }
       });
@@ -248,7 +256,7 @@ router.post('/login', async (req, res) => {
         email: user.email.toLowerCase(),
         phone: user.phone,
         city: user.city,
-        role: user.role
+        role: user.email.toLowerCase().trim() === 'admin@apexdrive.in' ? 'admin' : 'customer'
       };
 
       const token = generateToken(authUser);
@@ -288,7 +296,7 @@ router.get('/me', protect, async (req, res) => {
       email: req.user.email,
       phone: req.user.phone,
       city: req.user.city,
-      role: req.user.role,
+      role: req.user.email.toLowerCase().trim() === 'admin@apexdrive.in' ? 'admin' : 'customer',
       avatar: req.user.fullName ? req.user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'
     }
   });

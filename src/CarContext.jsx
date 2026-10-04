@@ -175,15 +175,14 @@ export const CarProvider = ({ children }) => {
             return authResponse.user;
         }
 
-        // Fallback user creation
-        const isAdminUser = userData.role === 'admin' || userData.email?.toLowerCase() === 'admin@apexdrive.in';
+        // Fallback user creation: regular users are always 'customer'
         const newUser = {
             id: 'USR-' + Math.floor(1000 + Math.random() * 9000),
-            name: userData.fullName || 'Registered User',
+            name: userData.fullName || 'Registered Customer',
             email: userData.email,
             phone: userData.phone && userData.phone.startsWith('+91') ? userData.phone : `+91 ${userData.phone || '98201 00000'}`,
             city: userData.city || 'Mumbai',
-            role: isAdminUser ? 'admin' : 'customer',
+            role: 'customer',
             avatar: userData.fullName ? userData.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'CU'
         };
 
@@ -274,7 +273,7 @@ export const CarProvider = ({ children }) => {
             deleteCar,
             user,
             token,
-            isAdmin: user?.role === 'admin',
+            isAdmin: !!user && user.email?.toLowerCase().trim() === 'admin@apexdrive.in' && user.role === 'admin',
             login,
             signup,
             logout

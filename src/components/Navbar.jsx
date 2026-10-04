@@ -4,7 +4,7 @@ import { CarContext } from '../CarContext';
 
 export const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { bookings, user, logout } = useContext(CarContext);
+  const { bookings, user, logout, isAdmin } = useContext(CarContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -62,18 +62,17 @@ export const Navbar = () => {
               </span>
             )}
           </NavLink>
-          <NavLink to="/admin" className={({ isActive }) => 
-            `text-sm font-semibold transition px-3 py-1.5 rounded-lg flex items-center space-x-1 ${
-              isActive 
-                ? 'text-purple-600 bg-purple-50 font-bold border border-purple-200' 
-                : 'text-purple-700 hover:text-purple-900 hover:bg-purple-50'
-            }`
-          }>
-            <span>Admin Portal</span>
-            <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-black">
-              Exp 6-7
-            </span>
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/admin" className={({ isActive }) => 
+              `text-sm font-semibold transition px-3 py-1.5 rounded-lg flex items-center space-x-1 ${
+                isActive 
+                  ? 'text-purple-600 bg-purple-50 font-bold border border-purple-200' 
+                  : 'text-purple-700 hover:text-purple-900 hover:bg-purple-50'
+              }`
+            }>
+              <span>👑 Admin Portal</span>
+            </NavLink>
+          )}
         </div>
 
         {/* User Authentication Status or CTA */}
@@ -191,16 +190,15 @@ export const Navbar = () => {
               </span>
             )}
           </NavLink>
-          <NavLink 
-            to="/admin" 
-            onClick={() => setIsMobileMenuOpen(false)}
-            className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm ${isActive ? 'bg-purple-50 text-purple-700' : 'text-purple-600 hover:bg-purple-50'}`}
-          >
-            <span>👑 Admin Portal</span>
-            <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded font-black">
-              Exp 6 & 7
-            </span>
-          </NavLink>
+          {isAdmin && (
+            <NavLink 
+              to="/admin" 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={({ isActive }) => `flex items-center justify-between px-4 py-2.5 rounded-xl font-semibold text-sm ${isActive ? 'bg-purple-50 text-purple-700' : 'text-purple-600 hover:bg-purple-50'}`}
+            >
+              <span>👑 Admin Portal</span>
+            </NavLink>
+          )}
 
           {!user && (
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">

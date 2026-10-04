@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import { CarContext } from '../CarContext';
 import { fetchAdminStatsAPI, runAutomatedTestsAPI, uploadVehicleImageAPI } from '../services/api';
 import { getSocketStatus, subscribeToNewBookings, subscribeToStatusUpdates, sendFleetUpdate } from '../services/socket';
@@ -17,6 +18,7 @@ export const AdminDashboard = () => {
     bookings, 
     user, 
     token, 
+    isAdmin,
     addCar, 
     updateCar, 
     deleteCar, 
@@ -183,6 +185,11 @@ export const AdminDashboard = () => {
       await deleteCar(carId);
     }
   };
+
+  // Hard Security Boundary: Block all customers from accessing Admin portal
+  if (!user || !isAdmin || user.email?.toLowerCase().trim() !== 'admin@apexdrive.in') {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="container mx-auto px-4 max-w-7xl py-12">
