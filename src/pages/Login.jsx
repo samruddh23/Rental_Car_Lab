@@ -63,75 +63,7 @@ export const Login = () => {
           </p>
         </div>
 
-        {/* Configured Accounts (1 Admin + 2 Customers) */}
-        <div className="mb-6 p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-              Available Accounts
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium">Click to pre-fill</span>
-          </div>
 
-          <div className="space-y-2">
-            {/* 1. Admin Account */}
-            <div 
-              onClick={() => {
-                setEmailOrPhone('admin@apexdrive.in');
-                setPassword('Admin@123');
-                setError('');
-              }}
-              className="p-2.5 bg-purple-50/80 hover:bg-purple-100 border border-purple-200 rounded-xl cursor-pointer transition flex items-center justify-between group"
-            >
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-black bg-purple-700 text-white px-1.5 py-0.5 rounded tracking-wider uppercase">👑 Admin Only</span>
-                  <span className="text-xs font-bold text-purple-950">admin@apexdrive.in</span>
-                </div>
-                <p className="text-[10px] text-purple-700 mt-0.5">Password: <code className="font-mono bg-purple-200/70 text-purple-900 px-1 py-0.2 rounded font-bold">Admin@123</code></p>
-              </div>
-              <span className="text-[11px] font-bold text-purple-700 group-hover:translate-x-0.5 transition-transform">Use &rarr;</span>
-            </div>
-
-            {/* 2. Customer 1 */}
-            <div 
-              onClick={() => {
-                setEmailOrPhone('rahul.sharma@gmail.com');
-                setPassword('Customer@123');
-                setError('');
-              }}
-              className="p-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer transition flex items-center justify-between group"
-            >
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-bold bg-slate-700 text-white px-1.5 py-0.5 rounded tracking-wider uppercase">Customer 1</span>
-                  <span className="text-xs font-bold text-slate-800">rahul.sharma@gmail.com</span>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-0.5">Password: <code className="font-mono bg-slate-100 text-slate-800 px-1 py-0.2 rounded font-bold">Customer@123</code> • Rahul Sharma</p>
-              </div>
-              <span className="text-[11px] font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">Use &rarr;</span>
-            </div>
-
-            {/* 3. Customer 2 */}
-            <div 
-              onClick={() => {
-                setEmailOrPhone('priya.patel@gmail.com');
-                setPassword('Customer@456');
-                setError('');
-              }}
-              className="p-2.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl cursor-pointer transition flex items-center justify-between group"
-            >
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-bold bg-slate-700 text-white px-1.5 py-0.5 rounded tracking-wider uppercase">Customer 2</span>
-                  <span className="text-xs font-bold text-slate-800">priya.patel@gmail.com</span>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-0.5">Password: <code className="font-mono bg-slate-100 text-slate-800 px-1 py-0.2 rounded font-bold">Customer@456</code> • Priya Patel</p>
-              </div>
-              <span className="text-[11px] font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">Use &rarr;</span>
-            </div>
-          </div>
-        </div>
 
         {error && (
           <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-600 text-xs rounded-xl flex items-center space-x-2">
