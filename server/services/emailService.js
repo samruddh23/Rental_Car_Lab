@@ -12,9 +12,9 @@ import nodemailer from 'nodemailer';
  * - SMTP_FROM: Default sender address (e.g. '"ApexDrive Bharat" <no-reply@apexdrive.in>')
  */
 const createTransporter = () => {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const host = (process.env.SMTP_HOST || '').trim();
+  const user = (process.env.SMTP_USER || '').trim();
+  const pass = (process.env.SMTP_PASS || '').trim().replace(/\s+/g, '');
   const port = Number(process.env.SMTP_PORT) || 587;
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
 
@@ -31,7 +31,10 @@ const createTransporter = () => {
 };
 
 const getSenderAddress = () => {
-  return process.env.SMTP_FROM || process.env.EMAIL_FROM || '"ApexDrive Bharat Rentals" <no-reply@apexdrive.in>';
+  if (process.env.SMTP_USER && (process.env.SMTP_HOST || '').includes('gmail')) {
+    return `"ApexDrive Rentals" <${process.env.SMTP_USER}>`;
+  }
+  return process.env.SMTP_FROM || process.env.EMAIL_FROM || (process.env.SMTP_USER ? `"ApexDrive Rentals" <${process.env.SMTP_USER}>` : '"ApexDrive Rentals" <no-reply@apexdrive.in>');
 };
 
 /**
