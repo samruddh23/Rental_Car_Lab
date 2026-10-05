@@ -118,9 +118,14 @@ const seedDatabase = async () => {
       if (!exists) {
         await User.create(u);
         console.log(`👤 Seeded user: ${u.email} (${u.role})`);
+      } else {
+        exists.role = u.role;
+        exists.status = u.status || 'active';
+        await exists.save();
+        console.log(`👤 Updated user role: ${u.email} -> ${u.role}`);
       }
     }
-    console.log('Seeded preconfigured admin and customer accounts.');
+    console.log('Seeded preconfigured Super Admin, Admin, and Customer accounts.');
 
     await mongoose.disconnect();
     console.log('Database connection closed.');

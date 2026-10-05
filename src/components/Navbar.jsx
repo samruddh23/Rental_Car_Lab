@@ -81,11 +81,11 @@ export const Navbar = () => {
             <div className="flex items-center space-x-3 bg-slate-50 border border-slate-200/80 rounded-2xl p-1.5 pl-3">
               <div className="text-right">
                 <span className="text-[10px] text-slate-400 block font-medium leading-none">
-                  {user.role === 'admin' ? '👑 Admin' : 'Customer'} • Namaste 🙏
+                  {user.role === 'super_admin' ? '⚡ Super Admin' : (user.role === 'admin' ? '👑 Admin' : 'Customer')} • Namaste 🙏
                 </span>
                 <span className="text-xs font-bold text-slate-800 leading-tight block">{user.name}</span>
               </div>
-              <div className={`w-8 h-8 ${user.role === 'admin' ? 'bg-purple-600' : 'bg-indigo-600'} text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-sm`}>
+              <div className={`w-8 h-8 ${user.role === 'super_admin' ? 'bg-amber-600' : (user.role === 'admin' ? 'bg-purple-600' : 'bg-indigo-600')} text-white rounded-xl flex items-center justify-center text-xs font-bold shadow-sm`}>
                 {user.avatar || 'IN'}
               </div>
               <button

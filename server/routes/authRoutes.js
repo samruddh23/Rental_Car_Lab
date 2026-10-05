@@ -7,23 +7,38 @@ import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'apexdrive_bharat_jwt_secret_key_2026';
 
-// Helper to generate JWT token (Experiment 7)
+// Helper to generate JWT token (Experiment 7 & Feature 2 RBAC)
 const generateToken = (user) => {
-  const isDedicatedAdmin = (user.email || '').toLowerCase().trim() === 'admin@apexdrive.in';
+  const emailLower = (user.email || '').toLowerCase().trim();
+  let role = user.role || 'customer';
+  if (emailLower === 'superadmin@apexdrive.in') role = 'super_admin';
+  else if (emailLower === 'admin@apexdrive.in') role = 'admin';
+
   return jwt.sign(
     {
       id: user._id || user.id,
       email: user.email,
       name: user.fullName || user.name,
-      role: isDedicatedAdmin ? 'admin' : 'customer'
+      role,
+      status: user.status || 'active'
     },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
 };
 
-// Preconfigured verified accounts: 1 Admin + 2 Customers
+// Preconfigured verified accounts: 1 Super Admin + 1 Admin + 2 Customers
 export const defaultUsers = [
+  {
+    id: 'USR-SUPERADMIN-01',
+    fullName: 'ApexDrive Super Admin',
+    email: 'superadmin@apexdrive.in',
+    phone: '+91 98200 99999',
+    city: 'Mumbai',
+    password: 'SuperAdmin@123',
+    role: 'super_admin',
+    status: 'active'
+  },
   {
     id: 'USR-ADMIN-01',
     fullName: 'ApexDrive Administrator',
@@ -31,7 +46,8 @@ export const defaultUsers = [
     phone: '+91 98200 00000',
     city: 'Mumbai',
     password: 'Admin@123',
-    role: 'admin'
+    role: 'admin',
+    status: 'active'
   },
   {
     id: 'USR-CUST-01',
@@ -40,7 +56,8 @@ export const defaultUsers = [
     phone: '+91 98201 12345',
     city: 'Mumbai',
     password: 'Customer@123',
-    role: 'customer'
+    role: 'customer',
+    status: 'active'
   },
   {
     id: 'USR-CUST-02',
@@ -49,11 +66,12 @@ export const defaultUsers = [
     phone: '+91 98202 67890',
     city: 'Bengaluru',
     password: 'Customer@456',
-    role: 'customer'
+    role: 'customer',
+    status: 'active'
   }
 ];
 
-let fallbackUsers = [...defaultUsers];
+export let fallbackUsers = [...defaultUsers];
 
 export const seedDefaultUsers = async () => {
   if (!isDBConnected()) return;
@@ -224,7 +242,16 @@ router.post('/login', async (req, res) => {
         });
       }
 
+      if (user.status === 'disabled') {
+        return res.status(403).json({
+          success: false,
+          message: 'Account Disabled: Your account has been suspended by an Administrator.'
+        });
+      }
+
       const token = generateToken(user);
+      const emailLower = user.email.toLowerCase().trim();
+      const resolvedRole = emailLower === 'superadmin@apexdrive.in' ? 'super_admin' : (emailLower === 'admin@apexdrive.in' ? 'admin' : (user.role || 'customer'));
 
       return res.json({
         success: true,
@@ -236,7 +263,8 @@ router.post('/login', async (req, res) => {
           email: user.email,
           phone: user.phone,
           city: user.city,
-          role: user.email.toLowerCase().trim() === 'admin@apexdrive.in' ? 'admin' : 'customer',
+          role: resolvedRole,
+          status: user.status || 'active',
           avatar: user.fullName.split(' ').map(n => n[0]).join('').toUpperCase()
         }
       });
@@ -250,13 +278,24 @@ router.post('/login', async (req, res) => {
         });
       }
 
+      if (user.status === 'disabled') {
+        return res.status(403).json({
+          success: false,
+          message: 'Account Disabled: Your account has been suspended by an Administrator.'
+        });
+      }
+
+      const emailLower = user.email.toLowerCase().trim();
+      const resolvedRole = emailLower === 'superadmin@apexdrive.in' ? 'super_admin' : (emailLower === 'admin@apexdrive.in' ? 'admin' : (user.role || 'customer'));
+
       const authUser = {
         id: user.id,
         fullName: user.fullName,
         email: user.email.toLowerCase(),
         phone: user.phone,
         city: user.city,
-        role: user.email.toLowerCase().trim() === 'admin@apexdrive.in' ? 'admin' : 'customer'
+        role: resolvedRole,
+        status: user.status || 'active'
       };
 
       const token = generateToken(authUser);

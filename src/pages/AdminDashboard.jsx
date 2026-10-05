@@ -1,7 +1,17 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
 import { Navigate } from 'react-router-dom';
 import { CarContext } from '../CarContext';
-import { fetchAdminStatsAPI, runAutomatedTestsAPI, uploadVehicleImageAPI } from '../services/api';
+import { 
+  fetchAdminStatsAPI, 
+  runAutomatedTestsAPI, 
+  uploadVehicleImageAPI,
+  fetchCustomersAPI,
+  deleteCustomerAPI,
+  toggleCustomerStatusAPI,
+  fetchAdminsAPI,
+  createAdminAPI,
+  promoteUserToAdminAPI
+} from '../services/api';
 import { getSocketStatus, subscribeToNewBookings, subscribeToStatusUpdates, sendFleetUpdate } from '../services/socket';
 import { InvoiceModal } from '../components/InvoiceModal';
 import { 
@@ -19,15 +29,25 @@ export const AdminDashboard = () => {
     user, 
     token, 
     isAdmin,
+    isSuperAdmin,
     addCar, 
     updateCar, 
     deleteCar, 
     updateBookingStatus 
   } = useContext(CarContext);
 
-  const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'bookings', 'security', 'exp8_10'
+  const [activeTab, setActiveTab] = useState('fleet'); // 'fleet', 'bookings', 'security', 'exp8_10', 'customers', 'super_admin'
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+
+  // Customer Management & Super Admin State
+  const [customers, setCustomers] = useState([]);
+  const [customersLoading, setCustomersLoading] = useState(false);
+  const [admins, setAdmins] = useState([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [newAdminForm, setNewAdminForm] = useState({ name: '', email: '', password: '' });
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [adminActionNotice, setAdminActionNotice] = useState(null);
 
   // Experiment 8, 9 & 10 State
   const [testSuiteResults, setTestSuiteResults] = useState(null);
@@ -186,14 +206,98 @@ export const AdminDashboard = () => {
     }
   };
 
-  // Hard Security Boundary: Block all customers from accessing Admin portal
-  if (!user || !isAdmin || user.email?.toLowerCase().trim() !== 'admin@apexdrive.in') {
+  const loadCustomers = useCallback(async () => {
+    if (!token) return;
+    setCustomersLoading(true);
+    const res = await fetchCustomersAPI(token);
+    if (res && res.customers) {
+      setCustomers(res.customers);
+    }
+    setCustomersLoading(false);
+  }, [token]);
+
+  const loadAdmins = useCallback(async () => {
+    if (!token || !isSuperAdmin) return;
+    setAdminsLoading(true);
+    const res = await fetchAdminsAPI(token);
+    if (res && res.admins) {
+      setAdmins(res.admins);
+    }
+    setAdminsLoading(false);
+  }, [token, isSuperAdmin]);
+
+  useEffect(() => {
+    if (activeTab === 'customers') {
+      loadCustomers();
+    } else if (activeTab === 'super_admin' && isSuperAdmin) {
+      loadAdmins();
+    }
+  }, [activeTab, isSuperAdmin, loadCustomers, loadAdmins]);
+
+  const handleDeleteCustomer = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to permanently delete the customer account for "${name}"?`)) return;
+    const res = await deleteCustomerAPI(id, token);
+    if (res && res.message) {
+      setAdminActionNotice({ type: 'success', message: res.message });
+      loadCustomers();
+    } else {
+      setAdminActionNotice({ type: 'error', message: res?.error || 'Failed to remove customer account.' });
+    }
+    setTimeout(() => setAdminActionNotice(null), 4000);
+  };
+
+  const handleToggleCustomerStatus = async (id, currentStatus, name) => {
+    const nextStatus = currentStatus === 'active' ? 'disabled' : 'active';
+    const actionLabel = nextStatus === 'disabled' ? 'ban / disable' : 'activate';
+    if (!window.confirm(`Are you sure you want to ${actionLabel} account for "${name}"?`)) return;
+    const res = await toggleCustomerStatusAPI(id, nextStatus, token);
+    if (res && res.message) {
+      setAdminActionNotice({ type: 'success', message: res.message });
+      loadCustomers();
+    } else {
+      setAdminActionNotice({ type: 'error', message: res?.error || 'Failed to update account status.' });
+    }
+    setTimeout(() => setAdminActionNotice(null), 4000);
+  };
+
+  const handlePromoteCustomer = async (id, currentRole, name) => {
+    const nextRole = currentRole === 'admin' ? 'customer' : 'admin';
+    if (!window.confirm(`Change role of "${name}" to "${nextRole}"?`)) return;
+    const res = await promoteUserToAdminAPI(id, nextRole, token);
+    if (res && res.message) {
+      setAdminActionNotice({ type: 'success', message: res.message });
+      loadCustomers();
+      if (isSuperAdmin) loadAdmins();
+    } else {
+      setAdminActionNotice({ type: 'error', message: res?.error || 'Failed to update role.' });
+    }
+    setTimeout(() => setAdminActionNotice(null), 4000);
+  };
+
+  const handleCreateAdminSubmit = async (e) => {
+    e.preventDefault();
+    if (!newAdminForm.name || !newAdminForm.email || !newAdminForm.password) return;
+    setCreatingAdmin(true);
+    const res = await createAdminAPI(newAdminForm, token);
+    setCreatingAdmin(false);
+    if (res && res.user) {
+      setAdminActionNotice({ type: 'success', message: `✅ Admin account created for ${res.user.email}!` });
+      setNewAdminForm({ name: '', email: '', password: '' });
+      loadAdmins();
+    } else {
+      setAdminActionNotice({ type: 'error', message: res?.error || 'Failed to create admin.' });
+    }
+    setTimeout(() => setAdminActionNotice(null), 4000);
+  };
+
+  // Hard Security Boundary: Block all non-admins from accessing Admin portal
+  if (!user || !isAdmin) {
     return <Navigate to="/" replace />;
   }
 
   return (
     <div className="container mx-auto px-4 max-w-7xl py-12">
-      {/* Top Banner: Experiment 6 & 7 Indicator */}
+      {/* Top Banner: Role & Database Status */}
       <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-8 mb-8 text-white relative overflow-hidden border border-indigo-900/40 shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -208,18 +312,23 @@ export const AdminDashboard = () => {
               <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                 Exp 7: JWT Auth & RBAC
               </span>
+              {isSuperAdmin && (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                  ⚡ Super Admin Privileges Active
+                </span>
+              )}
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Executive Fleet Management Portal
+              Executive Fleet & User Management Portal
             </h1>
             <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
-              Real-time administrative control panel with full MongoDB persistence, CRUD vehicle management, booking status lifecycle, and JWT authorization.
+              Real-time administrative control panel with full MongoDB persistence, CRUD vehicle management, booking status lifecycle, and Role-Based Access Control (RBAC).
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <span className="bg-purple-900/60 border border-purple-500/40 text-purple-200 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2">
-              <span>👑</span> Verified Admin: {user?.email || 'admin@apexdrive.in'}
+            <span className={`${isSuperAdmin ? 'bg-amber-900/60 border-amber-500/40 text-amber-200' : 'bg-purple-900/60 border-purple-500/40 text-purple-200'} border text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2`}>
+              <span>{isSuperAdmin ? '⚡' : '👑'}</span> {isSuperAdmin ? 'Super Admin' : 'Admin'}: {user?.email}
             </span>
             <button
               onClick={() => setShowAddModal(true)}
@@ -289,10 +398,10 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 mb-8 space-x-8">
+      <div className="flex border-b border-slate-200 mb-8 space-x-8 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab('fleet')}
-          className={`pb-4 text-xs font-bold uppercase tracking-wider transition relative ${
+          className={`pb-4 text-xs font-bold uppercase tracking-wider transition whitespace-nowrap relative ${
             activeTab === 'fleet' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-700'
           }`}
         >
@@ -300,15 +409,33 @@ export const AdminDashboard = () => {
         </button>
         <button
           onClick={() => setActiveTab('bookings')}
-          className={`pb-4 text-xs font-bold uppercase tracking-wider transition relative ${
+          className={`pb-4 text-xs font-bold uppercase tracking-wider transition whitespace-nowrap relative ${
             activeTab === 'bookings' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-700'
           }`}
         >
           📋 Bookings Lifecycle (Exp 4 & 6)
         </button>
         <button
+          onClick={() => setActiveTab('customers')}
+          className={`pb-4 text-xs font-bold uppercase tracking-wider transition whitespace-nowrap relative ${
+            activeTab === 'customers' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-700'
+          }`}
+        >
+          👥 Customer Management
+        </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => setActiveTab('super_admin')}
+            className={`pb-4 text-xs font-bold uppercase tracking-wider transition whitespace-nowrap relative ${
+              activeTab === 'super_admin' ? 'text-amber-600 border-b-2 border-amber-600' : 'text-slate-400 hover:text-slate-700'
+            }`}
+          >
+            ⚡ Super Admin Portal
+          </button>
+        )}
+        <button
           onClick={() => setActiveTab('security')}
-          className={`pb-4 text-xs font-bold uppercase tracking-wider transition relative ${
+          className={`pb-4 text-xs font-bold uppercase tracking-wider transition whitespace-nowrap relative ${
             activeTab === 'security' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-700'
           }`}
         >
@@ -316,13 +443,25 @@ export const AdminDashboard = () => {
         </button>
         <button
           onClick={() => setActiveTab('exp8_10')}
-          className={`pb-4 text-xs font-bold uppercase tracking-wider transition relative ${
+          className={`pb-4 text-xs font-bold uppercase tracking-wider transition whitespace-nowrap relative ${
             activeTab === 'exp8_10' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-400 hover:text-slate-700'
           }`}
         >
           🔬 Exp 8-10: Files, Sockets & Testing
         </button>
       </div>
+
+      {/* Admin Action Feedback Notice */}
+      {adminActionNotice && (
+        <div className={`mb-6 p-4 rounded-2xl text-xs font-bold flex items-center justify-between border ${
+          adminActionNotice.type === 'error' 
+            ? 'bg-rose-50 border-rose-200 text-rose-700' 
+            : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+        }`}>
+          <span>{adminActionNotice.message}</span>
+          <button onClick={() => setAdminActionNotice(null)} className="text-slate-400 hover:text-slate-600 ml-3">✕</button>
+        </div>
+      )}
 
       {/* TAB 1: FLEET CRUD */}
       {activeTab === 'fleet' && (
@@ -885,6 +1024,293 @@ export const AdminDashboard = () => {
               <span>$ docker-compose up --build</span>
               <span className="text-[11px] text-slate-400">Launch entire MERN stack in 1 command</span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: CUSTOMER MANAGEMENT (Admin & Super Admin) */}
+      {activeTab === 'customers' && (
+        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                  Role-Based Access Control (RBAC)
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full">
+                  Admin & Super Admin Scope
+                </span>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900">Registered Customer Accounts</h2>
+              <p className="text-xs text-slate-500">View registered users, disable/ban suspicious accounts, or permanently delete customer data.</p>
+            </div>
+            <button
+              onClick={loadCustomers}
+              disabled={customersLoading}
+              className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2"
+            >
+              <span>🔄</span> {customersLoading ? 'Refreshing...' : 'Refresh List'}
+            </button>
+          </div>
+
+          {customersLoading ? (
+            <div className="p-12 text-center text-slate-400 text-xs">
+              <span className="inline-block animate-spin text-lg mb-2">⏳</span>
+              <p>Fetching customers from MongoDB...</p>
+            </div>
+          ) : customers.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 text-xs">
+              <p className="text-sm font-bold text-slate-600 mb-1">No customer accounts registered yet</p>
+              <p>Customers will appear here when they register or use the demo accounts.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+                  <tr>
+                    <th className="py-4 px-6">Customer</th>
+                    <th className="py-4 px-6">Email</th>
+                    <th className="py-4 px-6">Role</th>
+                    <th className="py-4 px-6">Account Status</th>
+                    <th className="py-4 px-6">Registered On</th>
+                    <th className="py-4 px-6 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {customers.map((c) => (
+                    <tr key={c._id || c.id} className="hover:bg-slate-50/50 transition">
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">
+                            {c.name ? c.name.charAt(0).toUpperCase() : 'U'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{c.name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono">ID: {(c._id || c.id).slice(-6)}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6 font-mono text-slate-600">
+                        {c.email}
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          c.role === 'admin' 
+                            ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {c.role || 'customer'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          c.status === 'disabled'
+                            ? 'bg-rose-100 text-rose-700 border border-rose-200'
+                            : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${c.status === 'disabled' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+                          {c.status === 'disabled' ? 'Banned / Disabled' : 'Active'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-slate-400 text-[11px]">
+                        {c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-IN') : 'Recent'}
+                      </td>
+                      <td className="py-4 px-6 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Ban / Activate Toggle */}
+                          <button
+                            onClick={() => handleToggleCustomerStatus(c._id || c.id, c.status || 'active', c.name)}
+                            className={`px-3 py-1.5 rounded-lg font-bold text-[11px] transition ${
+                              c.status === 'disabled'
+                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
+                                : 'bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200'
+                            }`}
+                            title={c.status === 'disabled' ? 'Enable customer login' : 'Ban customer from logging in'}
+                          >
+                            {c.status === 'disabled' ? '✓ Activate' : '⊘ Ban / Disable'}
+                          </button>
+
+                          {/* Promote to Admin (Super Admin only) */}
+                          {isSuperAdmin && (
+                            <button
+                              onClick={() => handlePromoteCustomer(c._id || c.id, c.role || 'customer', c.name)}
+                              className="px-3 py-1.5 rounded-lg font-bold text-[11px] bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 transition"
+                              title="Promote customer to Admin"
+                            >
+                              ⬆ Promote
+                            </button>
+                          )}
+
+                          {/* Remove Account */}
+                          <button
+                            onClick={() => handleDeleteCustomer(c._id || c.id, c.name)}
+                            className="px-3 py-1.5 rounded-lg font-bold text-[11px] bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition flex items-center gap-1"
+                            title="Permanently remove customer from MongoDB"
+                          >
+                            <span>🗑</span> Remove Account
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 6: SUPER ADMIN PORTAL (Super Admin Only) */}
+      {activeTab === 'super_admin' && isSuperAdmin && (
+        <div className="space-y-8">
+          {/* Section 1: Create New Admin */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-8">
+            <div className="max-w-2xl">
+              <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full border border-amber-200">
+                Super Admin Privilege
+              </span>
+              <h2 className="text-xl font-black text-slate-900 mt-2">Create New Administrator Account</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Provision a new administrator account with permissions to manage fleet inventory, approve/cancel customer bookings, and access administrative diagnostics.
+              </p>
+            </div>
+
+            <form onSubmit={handleCreateAdminSubmit} className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Vikram Malhotra"
+                  value={newAdminForm.name}
+                  onChange={(e) => setNewAdminForm({ ...newAdminForm, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="e.g. vikram.admin@apexdrive.in"
+                  value={newAdminForm.email}
+                  onChange={(e) => setNewAdminForm({ ...newAdminForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-600 font-bold mb-1">Password</label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  placeholder="Min 6 characters"
+                  value={newAdminForm.password}
+                  onChange={(e) => setNewAdminForm({ ...newAdminForm, password: e.target.value })}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-600"
+                />
+              </div>
+              <div className="md:col-span-3 flex justify-end">
+                <button
+                  type="submit"
+                  disabled={creatingAdmin}
+                  className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs uppercase tracking-wider px-6 py-2.5 rounded-xl transition shadow-md shadow-amber-200 flex items-center gap-2"
+                >
+                  <span>⚡</span> {creatingAdmin ? 'Provisioning Admin...' : 'Create Admin Account'}
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Section 2: Administrative Directory */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Administrative Hierarchy</h2>
+                <p className="text-xs text-slate-500">Super Admins and Admins currently authorized on this system.</p>
+              </div>
+              <button
+                onClick={loadAdmins}
+                disabled={adminsLoading}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-2"
+              >
+                <span>🔄</span> {adminsLoading ? 'Refreshing...' : 'Refresh Admins'}
+              </button>
+            </div>
+
+            {adminsLoading ? (
+              <div className="p-12 text-center text-slate-400 text-xs">
+                <span className="inline-block animate-spin text-lg mb-2">⏳</span>
+                <p>Loading administrative accounts...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider border-b border-slate-100">
+                    <tr>
+                      <th className="py-4 px-6">Administrator</th>
+                      <th className="py-4 px-6">Email</th>
+                      <th className="py-4 px-6">Role</th>
+                      <th className="py-4 px-6">Account Status</th>
+                      <th className="py-4 px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {admins.map((a) => (
+                      <tr key={a._id || a.id} className="hover:bg-slate-50/50 transition">
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full font-bold flex items-center justify-center text-xs ${
+                              a.role === 'super_admin' ? 'bg-amber-100 text-amber-800' : 'bg-purple-100 text-purple-800'
+                            }`}>
+                              {a.role === 'super_admin' ? '⚡' : '👑'}
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900">{a.name}</p>
+                              <p className="text-[10px] text-slate-400 font-mono">ID: {(a._id || a.id).slice(-6)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 font-mono text-slate-600">
+                          {a.email}
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            a.role === 'super_admin'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                              : 'bg-purple-100 text-purple-800 border border-purple-200'
+                          }`}>
+                            {a.role}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {a.status || 'active'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          {a.role !== 'super_admin' && (
+                            <button
+                              onClick={() => handlePromoteCustomer(a._id || a.id, a.role, a.name)}
+                              className="px-3 py-1.5 rounded-lg font-bold text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+                              title="Demote this admin to customer role"
+                            >
+                              ⬇ Demote to Customer
+                            </button>
+                          )}
+                          {a.role === 'super_admin' && (
+                            <span className="text-[11px] text-amber-600 font-semibold italic">
+                              Root Authority
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

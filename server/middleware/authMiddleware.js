@@ -32,6 +32,12 @@ export const protect = async (req, res, next) => {
           message: 'User belonging to this token no longer exists'
         });
       }
+      if (user.status === 'disabled') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been disabled or suspended by an Administrator.'
+        });
+      }
       req.user = user;
     } else {
       // In-memory fallback
@@ -40,8 +46,15 @@ export const protect = async (req, res, next) => {
         id: decoded.id,
         fullName: decoded.name || 'Member',
         email: decoded.email,
-        role: decoded.role || 'customer'
+        role: decoded.role || 'customer',
+        status: decoded.status || 'active'
       };
+      if (req.user.status === 'disabled') {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been disabled or suspended by an Administrator.'
+        });
+      }
     }
 
     next();
@@ -54,14 +67,30 @@ export const protect = async (req, res, next) => {
 };
 
 /**
- * Authorize only admin users
+ * Middleware: Verify Admin or Super Admin Role (Feature 2)
  */
-export const adminOnly = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
+export const verifyAdmin = (req, res, next) => {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'super_admin')) {
     return res.status(403).json({
       success: false,
-      message: 'Forbidden: Admin privileges required for this action'
+      message: 'Forbidden: Admin or Super Admin privileges required for this action'
     });
   }
   next();
 };
+
+/**
+ * Middleware: Verify Super Admin Role (Feature 2)
+ */
+export const verifySuperAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'super_admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Forbidden: Super Admin privileges required for this action'
+    });
+  }
+  next();
+};
+
+// Backwards compatibility alias
+export const adminOnly = verifyAdmin;

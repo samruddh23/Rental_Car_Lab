@@ -1,6 +1,7 @@
 import express from 'express';
 import Booking from '../models/Booking.js';
 import { isDBConnected } from '../config/db.js';
+import { sendBookingConfirmationEmail, sendBookingCancellationEmail } from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -98,6 +99,12 @@ router.post('/', async (req, res) => {
           amount: newBooking.totalAmount
         });
       }
+
+      // Feature 1: Send "Booking Confirmed" email via Nodemailer
+      sendBookingConfirmationEmail(newBooking).catch(err => 
+        console.error('Background email notification error:', err.message)
+      );
+
       return res.status(201).json({
         success: true,
         source: 'mongodb',
@@ -118,6 +125,11 @@ router.post('/', async (req, res) => {
           amount: newBooking.totalAmount
         });
       }
+
+      // Feature 1: Send "Booking Confirmed" email via Nodemailer (Fallback simulation)
+      sendBookingConfirmationEmail(newBooking).catch(err => 
+        console.error('Background email notification error:', err.message)
+      );
 
       return res.status(201).json({
         success: true,
@@ -207,6 +219,13 @@ router.put('/:id/status', async (req, res) => {
         req.io.emit('booking_status_updated', { id, status });
       }
 
+      // Feature 1: Send "Booking Canceled" email via Nodemailer if status is Cancelled
+      if (status === 'Cancelled') {
+        sendBookingCancellationEmail(updated).catch(err => 
+          console.error('Background cancellation email notification error:', err.message)
+        );
+      }
+
       return res.json({
         success: true,
         source: 'mongodb',
@@ -226,6 +245,13 @@ router.put('/:id/status', async (req, res) => {
 
       if (req.io) {
         req.io.emit('booking_status_updated', { id, status });
+      }
+
+      // Feature 1: Send "Booking Canceled" email in fallback simulation
+      if (status === 'Cancelled') {
+        sendBookingCancellationEmail(fallbackBookings[bookingIndex]).catch(err => 
+          console.error('Background cancellation email notification error:', err.message)
+        );
       }
 
       return res.json({
@@ -257,26 +283,40 @@ router.delete('/:id', async (req, res) => {
           message: `Booking with ID ${id} not found in MongoDB`
         });
       }
+
+      // Feature 1: Send "Booking Canceled" email
+      sendBookingCancellationEmail(deleted).catch(err => 
+        console.error('Background cancellation email notification error:', err.message)
+      );
+
       return res.json({
         success: true,
         source: 'mongodb',
-        message: `Booking ${id} cancelled and removed from MongoDB`
+        message: `Booking ${id} cancelled and removed from MongoDB`,
+        data: deleted
       });
     } else {
       const initialLength = fallbackBookings.length;
+      const targetBooking = fallbackBookings.find(b => b.id === id);
       fallbackBookings = fallbackBookings.filter(b => b.id !== id);
 
-      if (fallbackBookings.length === initialLength) {
+      if (fallbackBookings.length === initialLength || !targetBooking) {
         return res.status(404).json({
           success: false,
           message: `Booking with ID ${id} not found`
         });
       }
 
+      // Feature 1: Send "Booking Canceled" email
+      sendBookingCancellationEmail(targetBooking).catch(err => 
+        console.error('Background cancellation email notification error:', err.message)
+      );
+
       return res.json({
         success: true,
         source: 'in-memory-fallback',
-        message: `Booking ${id} cancelled successfully`
+        message: `Booking ${id} cancelled successfully`,
+        data: targetBooking
       });
     }
   } catch (error) {

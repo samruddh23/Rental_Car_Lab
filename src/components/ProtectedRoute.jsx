@@ -8,7 +8,7 @@ import { ShieldIcon } from './Icons';
  * Protects routes from unauthenticated users and restricts admin paths.
  */
 export const ProtectedRoute = ({ children, adminOnly = false }) => {
-  const { user, isAdmin, logout } = useContext(CarContext);
+  const { user, isAdmin, isSuperAdmin, logout } = useContext(CarContext);
   const location = useLocation();
 
   // 1. Unauthenticated check
@@ -26,7 +26,7 @@ export const ProtectedRoute = ({ children, adminOnly = false }) => {
   }
 
   // 2. Admin role check
-  if (adminOnly && !isAdmin) {
+  if (adminOnly && !isAdmin && !isSuperAdmin) {
     return (
       <div className="container mx-auto px-4 max-w-2xl py-24 text-center">
         <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-xl">

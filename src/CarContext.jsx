@@ -101,8 +101,18 @@ export const CarProvider = ({ children }) => {
             return authResponse.user;
         }
 
-        // Verified Preconfigured Accounts: 1 Admin + 2 Customers
+        // Verified Preconfigured Accounts: 1 Super Admin + 1 Admin + 2 Customers
         const verifiedAccounts = [
+            {
+                id: 'USR-SUPERADMIN-01',
+                name: 'ApexDrive Super Admin',
+                email: 'superadmin@apexdrive.in',
+                phone: '+91 98200 99999',
+                city: 'Mumbai',
+                password: 'SuperAdmin@123',
+                role: 'super_admin',
+                avatar: 'SA'
+            },
             {
                 id: 'USR-ADMIN-01',
                 name: 'ApexDrive Administrator',
@@ -273,7 +283,8 @@ export const CarProvider = ({ children }) => {
             deleteCar,
             user,
             token,
-            isAdmin: !!user && user.email?.toLowerCase().trim() === 'admin@apexdrive.in' && user.role === 'admin',
+            isSuperAdmin: !!user && (user.role === 'super_admin' || user.email?.toLowerCase().trim() === 'superadmin@apexdrive.in'),
+            isAdmin: !!user && (user.role === 'admin' || user.role === 'super_admin' || user.email?.toLowerCase().trim() === 'admin@apexdrive.in' || user.email?.toLowerCase().trim() === 'superadmin@apexdrive.in'),
             login,
             signup,
             logout
