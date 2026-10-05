@@ -234,6 +234,35 @@ export const sendBookingConfirmationEmail = async (booking) => {
     return { success: false, reason: 'Missing recipient email' };
   }
 
+  // 1. Cloud HTTP API Delivery (Resend API via Port 443 - Bypasses Render Free Tier SMTP block)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'ApexDrive Rentals <onboarding@resend.dev>',
+          to: [booking.customerEmail],
+          subject: `🚗 Booking Confirmed! Reservation #${booking.id} - ApexDrive Bharat`,
+          html: getBookingConfirmationEmailHTML(booking)
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log(`✅ [Resend API]: Booking confirmation email sent to ${booking.customerEmail} (ID: ${data.id})`);
+        return { success: true, messageId: data.id, provider: 'resend' };
+      } else {
+        console.error(`❌ [Resend API Error]:`, data);
+      }
+    } catch (err) {
+      console.error(`❌ [Resend Fetch Error]:`, err.message);
+    }
+  }
+
+  // 2. Standard Nodemailer SMTP Delivery (Local development / Unblocked networks)
   const transporter = createTransporter();
   const mailOptions = {
     from: getSenderAddress(),
@@ -251,7 +280,7 @@ export const sendBookingConfirmationEmail = async (booking) => {
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ [Nodemailer]: Booking confirmation email sent to ${booking.customerEmail} (Message ID: ${info.messageId})`);
-    return { success: true, messageId: info.messageId };
+    return { success: true, messageId: info.messageId, provider: 'nodemailer' };
   } catch (error) {
     console.error(`❌ [Nodemailer Error]: Failed to send confirmation email to ${booking.customerEmail}:`, error.message);
     return { success: false, error: error.message };
@@ -267,6 +296,35 @@ export const sendBookingCancellationEmail = async (booking) => {
     return { success: false, reason: 'Missing recipient email' };
   }
 
+  // 1. Cloud HTTP API Delivery (Resend API via Port 443 - Bypasses Render Free Tier SMTP block)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'ApexDrive Rentals <onboarding@resend.dev>',
+          to: [booking.customerEmail],
+          subject: `❌ Booking Canceled: Reservation #${booking.id} - ApexDrive Bharat`,
+          html: getBookingCancellationEmailHTML(booking)
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log(`✅ [Resend API]: Booking cancellation email sent to ${booking.customerEmail} (ID: ${data.id})`);
+        return { success: true, messageId: data.id, provider: 'resend' };
+      } else {
+        console.error(`❌ [Resend API Error]:`, data);
+      }
+    } catch (err) {
+      console.error(`❌ [Resend Fetch Error]:`, err.message);
+    }
+  }
+
+  // 2. Standard Nodemailer SMTP Delivery (Local development / Unblocked networks)
   const transporter = createTransporter();
   const mailOptions = {
     from: getSenderAddress(),
@@ -284,7 +342,7 @@ export const sendBookingCancellationEmail = async (booking) => {
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ [Nodemailer]: Booking cancellation email sent to ${booking.customerEmail} (Message ID: ${info.messageId})`);
-    return { success: true, messageId: info.messageId };
+    return { success: true, messageId: info.messageId, provider: 'nodemailer' };
   } catch (error) {
     console.error(`❌ [Nodemailer Error]: Failed to send cancellation email to ${booking.customerEmail}:`, error.message);
     return { success: false, error: error.message };
