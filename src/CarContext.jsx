@@ -7,6 +7,8 @@ import {
     createCarAPI, 
     updateCarAPI, 
     deleteCarAPI, 
+    createBookingAPI,
+    cancelBookingAPI,
     updateBookingStatusAPI 
 } from './services/api';
 
@@ -218,8 +220,10 @@ export const CarProvider = ({ children }) => {
     };
 
     // Booking Handlers (Experiment 4 & 6 CRUD)
-    const addBooking = (bookingData) => {
-        const newBooking = {
+    const addBooking = async (bookingData) => {
+        // Send to backend so Nodemailer sends confirmation email and saves to DB
+        const serverBooking = await createBookingAPI(bookingData);
+        const newBooking = serverBooking || {
             id: 'BK-IN-' + Date.now().toString().slice(-6),
             createdAt: new Date().toISOString(),
             status: 'Confirmed',
@@ -235,7 +239,8 @@ export const CarProvider = ({ children }) => {
         setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
     };
 
-    const cancelBooking = (bookingId) => {
+    const cancelBooking = async (bookingId) => {
+        await cancelBookingAPI(bookingId);
         setBookings(prev => prev.filter(b => b.id !== bookingId));
     };
 
