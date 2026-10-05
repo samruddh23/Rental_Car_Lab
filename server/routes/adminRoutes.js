@@ -105,7 +105,7 @@ router.get('/customers', protect, verifyAdmin, async (req, res) => {
         count: customers.length,
         customers: customers.map(c => ({
           id: c._id,
-          name: c.fullName,
+          name: c.fullName || c.name || 'Customer',
           email: c.email,
           phone: c.phone || '',
           city: c.city || 'Mumbai',
@@ -121,7 +121,7 @@ router.get('/customers', protect, verifyAdmin, async (req, res) => {
         count: customers.length,
         customers: customers.map(c => ({
           id: c.id,
-          name: c.fullName,
+          name: c.fullName || c.name || 'Customer',
           email: c.email,
           phone: c.phone || '',
           city: c.city || 'Mumbai',
@@ -299,7 +299,7 @@ router.get('/admins', protect, verifySuperAdmin, async (req, res) => {
         count: admins.length,
         admins: admins.map(a => ({
           id: a._id,
-          name: a.fullName,
+          name: a.fullName || a.name || 'Admin',
           email: a.email,
           phone: a.phone || '',
           city: a.city || 'Mumbai',
@@ -315,7 +315,7 @@ router.get('/admins', protect, verifySuperAdmin, async (req, res) => {
         count: admins.length,
         admins: admins.map(a => ({
           id: a.id,
-          name: a.fullName,
+          name: a.fullName || a.name || 'Admin',
           email: a.email,
           phone: a.phone || '',
           city: a.city || 'Mumbai',

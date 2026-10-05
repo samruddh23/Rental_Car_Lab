@@ -207,24 +207,21 @@ export const AdminDashboard = () => {
   };
 
   const loadCustomers = useCallback(async () => {
-    if (!token) return;
     setCustomersLoading(true);
-    const res = await fetchCustomersAPI(token);
-    if (res && res.customers) {
-      setCustomers(res.customers);
-    }
+    const res = await fetchCustomersAPI();
+    const list = Array.isArray(res) ? res : (res?.customers || []);
+    setCustomers(list);
     setCustomersLoading(false);
-  }, [token]);
+  }, []);
 
   const loadAdmins = useCallback(async () => {
-    if (!token || !isSuperAdmin) return;
+    if (!isSuperAdmin) return;
     setAdminsLoading(true);
-    const res = await fetchAdminsAPI(token);
-    if (res && res.admins) {
-      setAdmins(res.admins);
-    }
+    const res = await fetchAdminsAPI();
+    const list = Array.isArray(res) ? res : (res?.admins || []);
+    setAdmins(list);
     setAdminsLoading(false);
-  }, [token, isSuperAdmin]);
+  }, [isSuperAdmin]);
 
   useEffect(() => {
     if (activeTab === 'customers') {

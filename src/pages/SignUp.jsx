@@ -77,22 +77,26 @@ export const SignUp = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      signup({
+    try {
+      await signup({
         fullName: formData.fullName,
         email: formData.email,
+        password: formData.password,
         phone: formData.phone,
         city: formData.city
       });
       setIsLoading(false);
       navigate('/fleet');
-    }, 600);
+    } catch (err) {
+      setIsLoading(false);
+      setErrors({ form: err.message || 'Registration failed. Please try again.' });
+    }
   };
 
   return (
