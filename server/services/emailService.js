@@ -26,7 +26,8 @@ const createTransporter = () => {
     host,
     port,
     secure,
-    auth: { user, pass }
+    auth: { user, pass },
+    family: 4
   });
 };
 
