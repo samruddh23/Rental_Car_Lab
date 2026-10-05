@@ -137,6 +137,9 @@ const seedDatabase = async () => {
 };
 
 // If run directly: node seed.js
-if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
+if (process.argv[1] && import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
   seedDatabase();
 }
+
+export default seedDatabase;
+
